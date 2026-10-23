@@ -53,6 +53,11 @@ export interface PortraitPalette {
   background: Color;
   neckShadow: Color;
   lightDirection: 'left' | 'right' | 'frontal';
+  samplingDiagnostics?: {
+    skinSamplesTotal: number;
+    skinSamplesValid: number;
+    hairWallBleedDetected: boolean;
+  };
 }
 
 /** Shape types for SVG rendering */
@@ -103,6 +108,38 @@ export interface PortraitLayer {
   order: number; // z-order, lower = behind
   shapes: PortraitShape[];
   visible: boolean;
+}
+
+export interface HeadPose {
+  pitch: number; // in degrees: positive = tilted up, negative = tilted down
+  yaw: number;   // in degrees: positive = turned right (viewer's right / person's left), negative = turned left
+  roll: number;  // in degrees: in-plane rotation
+  source: 'transformation-matrix' | 'geometric-landmark-estimate';
+}
+
+export type FaceBlendshapeMap = Record<string, number>;
+
+export interface EyebrowDenseMetrics {
+  archIndex: number;
+  archHeightRatio: number;
+  tailTiltDegrees: number;
+  thicknessTaper: number;
+}
+
+export interface EyeDenseMetrics {
+  fissureWidth: number;
+  fissureHeight: number;
+  aspectRatio: number;
+  tiltDegrees: number;
+  upperLidHooding: number;
+  epicanthicFoldDetected: boolean;
+}
+
+export interface LipDenseMetrics {
+  cupidsBowDepth: number;
+  cupidsBowWidth: number;
+  vermilionHeightRatio: number;
+  smileTension: number;
 }
 
 /** Detected facial feature geometry (normalized coordinates) */
@@ -171,6 +208,23 @@ export interface FacialFeatures {
   rightNasolabial?: Vec2[];
   mentalCrease?: Vec2[];
   allLandmarks?: Vec2[];
+  // Stage 1 dense geometry and pose
+  pose?: HeadPose;
+  blendshapes?: FaceBlendshapeMap;
+  facialTransformationMatrix?: number[];
+  leftEyebrowMetrics?: EyebrowDenseMetrics;
+  rightEyebrowMetrics?: EyebrowDenseMetrics;
+  leftEyeMetrics?: EyeDenseMetrics;
+  rightEyeMetrics?: EyeDenseMetrics;
+  lipMetrics?: LipDenseMetrics;
+  zygomaticCheeks?: Vec2[];
+  leftEyebrowDense?: Vec2[];
+  rightEyebrowDense?: Vec2[];
+  leftEyeDenseUpper?: Vec2[];
+  leftEyeDenseLower?: Vec2[];
+  rightEyeDenseUpper?: Vec2[];
+  rightEyeDenseLower?: Vec2[];
+  denseFaceContour?: Vec2[];
 }
 
 /** Hair estimation result */
@@ -273,6 +327,24 @@ export interface FaceAnalysis {
   validation?: ValidationMetrics;
   totalLandmarksDetected?: number;
   consumedLandmarkCount?: number;
+  diagnostics?: InputReliabilityDiagnostics;
+  pose?: HeadPose;
+  blendshapes?: FaceBlendshapeMap;
+}
+
+/** Local input reliability and reconstruction diagnostics (Phase H) */
+export interface InputReliabilityDiagnostics {
+  landmarkCount: number;
+  landmarkConfidenceStatus: 'high' | 'adequate' | 'degraded';
+  hasIrisRefinement: boolean;
+  segmentationStatus: 'mask-verified' | 'fallback-contour' | 'fallback-geometric';
+  contourQuality: 'clean' | 'simplified' | 'noisy' | 'rejected';
+  colorSamplingStatus: {
+    skinSamplesTotal: number;
+    skinSamplesValid: number;
+    hairWallBleedDetected: boolean;
+  };
+  fallbackSelections: string[];
 }
 
 /** Artboard viewBox dimensions */

@@ -22,12 +22,17 @@ export interface BoundingBox {
   height: number; // normalized [0, 1]
 }
 
+import { HeadPose } from '../../types/portrait';
+
 export interface DetectedFace {
   index: number;
   landmarks: NormalizedLandmark[];
   boundingBox: BoundingBox;
   area: number;
   centerDistance: number;
+  blendshapes?: Record<string, number>;
+  facialTransformationMatrix?: number[];
+  pose?: HeadPose;
 }
 
 export interface FaceDetectionResult {
@@ -38,6 +43,9 @@ export interface FaceDetectionResult {
   allFaces?: DetectedFace[];
   landmarks?: NormalizedLandmark[];
   boundingBox?: BoundingBox;
+  blendshapes?: Record<string, number>;
+  facialTransformationMatrix?: number[];
+  pose?: HeadPose;
   latencyMs?: number;
   errorMessage?: string;
   timestamp: number;

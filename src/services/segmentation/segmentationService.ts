@@ -124,6 +124,31 @@ export class SegmentationService {
   }
 
   /**
+   * Retrieves the raw multi-class semantic category mask
+   * Classes: 0: Background, 1: Hair, 2: Body-skin, 3: Face-skin, 4: Clothes, 5: Others
+   */
+  public async segmentCategoryMask(
+    source: HTMLImageElement | HTMLCanvasElement
+  ): Promise<{ rawMask: Uint8Array; maskWidth: number; maskHeight: number } | null> {
+    if (!this.segmenter || !this.isAvailable) {
+      return null;
+    }
+    try {
+      const segmentationResult = this.segmenter.segment(source);
+      const categoryMask = segmentationResult.categoryMask;
+      if (!categoryMask) return null;
+      const maskWidth = categoryMask.width;
+      const maskHeight = categoryMask.height;
+      const rawMask = new Uint8Array(categoryMask.getAsUint8Array());
+      categoryMask.close();
+      return { rawMask, maskWidth, maskHeight };
+    } catch (err) {
+      console.warn('Category mask segmentation error:', err);
+      return null;
+    }
+  }
+
+  /**
    * Performs local hair boundary segmentation
    *
    * @param source HTMLImageElement to segment

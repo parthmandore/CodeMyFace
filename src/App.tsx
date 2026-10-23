@@ -3,7 +3,9 @@ import { ValidatedImage } from './types/upload';
 import { PortraitModel } from './types/portrait';
 import { FaceDetectionResult } from './services/faceDetection/types';
 import { useFaceDetection } from './services/faceDetection';
-import { generatePortrait } from './engine/portraitPipeline';
+import { executeProgressivePortraitPipeline } from './engine/v2';
+import { SegmentationService } from './services/segmentation/segmentationService';
+import { faceDetectionService } from './services/faceDetection';
 import { Header } from './components/layout/Header';
 import { StepIndicator } from './components/studio/StepIndicator';
 import { UploadWorkflow } from './components/upload/UploadWorkflow';
@@ -50,19 +52,28 @@ export const App: React.FC = () => {
   };
 
   const runSynthesis = async (
-    detectionResult: FaceDetectionResult,
+    _detectionResult: FaceDetectionResult,
     imgElement: HTMLImageElement
   ) => {
     setIsGenerating(true);
     setGenerationError(null);
     try {
-      const result = await generatePortrait(imgElement, detectionResult);
-      if (result.success && result.model && result.svgString) {
-        setPortraitModel(result.model);
-        setSvgString(result.svgString);
+      const photoId = currentImage?.filename.replace(/\.[^/.]+$/, '') || 'portrait';
+      const segmenter = SegmentationService.getInstance();
+      await segmenter.initialize().catch((e) => console.warn('Segmenter init non-fatal:', e));
+
+      const update = await executeProgressivePortraitPipeline(
+        photoId,
+        imgElement,
+        faceDetectionService,
+        segmenter
+      );
+
+      if (update.svg) {
+        setSvgString(update.svg);
         setCurrentView('studio');
       } else {
-        setGenerationError(result.error || 'Face reconstruction pipeline could not generate vector model.');
+        setGenerationError(update.error || 'V2 vector reconstruction could not generate SVG.');
         setCurrentView('studio');
       }
     } catch (err) {

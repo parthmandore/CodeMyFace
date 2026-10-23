@@ -144,3 +144,31 @@ export const RIGHT_NASOLABIAL = [425, 426, 427, 436, 432] as const;
 // === Mental crease (groove between lower lip and chin) ===
 export const MENTAL_CREASE = [18, 200, 199, 175, 152] as const;
 
+// === Stage 1 Dense Facial Topologies ===
+// Eyebrow crest anchors (head, crest/arch, tail)
+export const LEFT_BROW_HEAD = 70;
+export const LEFT_BROW_ARCH = 105;
+export const LEFT_BROW_TAIL = 46;
+export const RIGHT_BROW_HEAD = 300;
+export const RIGHT_BROW_ARCH = 334;
+export const RIGHT_BROW_TAIL = 276;
+
+// Cupid's bow and lip anatomy anchors
+export const CUPIDS_BOW_PEAK_LEFT = 37;
+export const CUPIDS_BOW_PEAK_RIGHT = 267;
+export const CUPIDS_BOW_TROUGH = 0;
+export const LOWER_VERMILION_APEX = 17;
+export const COMMISSURE_LEFT = 61;
+export const COMMISSURE_RIGHT = 291;
+
+// Zygomatic malar prominence anchors (prevent artificial face slimming)
+export const ZYGOMATIC_MALAR = [50, 117, 123, 147, 213, 280, 346, 352, 376, 433] as const;
+
+// Dense face silhouette contour incorporating zygomatic transitions
+export const DENSE_FACE_CONTOUR = [
+  10, 338, 297, 332, 284, 251, 389, 356, 454, 433, 376, 352, 346, 323, 361, 288,
+  397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136,
+  172, 58, 132, 93, 117, 123, 147, 213, 234, 127, 162, 21, 54, 103, 67, 109,
+] as const;
+
+
