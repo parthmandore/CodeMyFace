@@ -1244,14 +1244,65 @@
    Responsive Design Breakpoints
    -------------------------------------------------------------------------- */
 @media (max-width: 960px) {
+  .studio-shell-workspace {
+    height: auto;
+    min-height: calc(100vh - var(--header-height));
+    overflow-y: auto;
+  }
+
+  .workspace-toolbar {
+    height: auto;
+    min-height: 48px;
+    padding: var(--space-2) var(--space-3);
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .workspace-toolbar__left {
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .workspace-toolbar__right {
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .staged-construction-bar {
+    height: auto;
+    flex-wrap: wrap;
+    padding: var(--space-2) var(--space-3);
+    gap: var(--space-2);
+  }
+
+  .staged-steps-stepper {
+    overflow-x: auto;
+    max-width: 100%;
+    padding-bottom: 4px;
+  }
+
   .studio-split-screen {
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr 1fr;
+    display: flex;
+    flex-direction: column-reverse;
+    height: auto;
+  }
+
+  .studio-pane {
+    height: auto;
+    overflow: visible;
   }
 
   .studio-pane--code {
     border-right: none;
-    border-bottom: 1px solid var(--border-subtle);
+    border-top: 1px solid var(--border-subtle);
+    max-height: 380px;
+    overflow: hidden;
+  }
+
+  .studio-pane--canvas {
+    min-height: 400px;
   }
 
   .stepper-divider {

@@ -29,3 +29,6 @@ dist-ssr
 *.png
 *.webp
 baselines/
+tests/fixtures/
+backups/
+scratch/
