@@ -18,6 +18,65 @@ const DEFAULT_WASM_PATH =
 const DEFAULT_MODEL_PATH =
   'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
 
+import { HeadPose } from '../../types/portrait';
+
+/**
+ * Safely computes head pose Euler angles (pitch, yaw, roll in degrees)
+ * from a 4x4 column-major transformation matrix or geometric landmarks fallback.
+ */
+export function computePoseAngles(
+  matrix?: number[],
+  landmarks?: NormalizedLandmark[]
+): HeadPose {
+  if (matrix && matrix.length >= 16) {
+    const r02 = matrix[8];
+    const r10 = matrix[1], r11 = matrix[5], r12 = matrix[9];
+    const r22 = matrix[10];
+
+    if (Number.isFinite(r12) && Number.isFinite(r02) && Number.isFinite(r22) && Number.isFinite(r10) && Number.isFinite(r11)) {
+      const pitch = Math.asin(Math.max(-1, Math.min(1, -r12))) * (180 / Math.PI);
+      const yaw = Math.atan2(r02, r22) * (180 / Math.PI);
+      const roll = Math.atan2(r10, r11) * (180 / Math.PI);
+      return {
+        pitch: Math.round(pitch * 10) / 10,
+        yaw: Math.round(yaw * 10) / 10,
+        roll: Math.round(roll * 10) / 10,
+        source: 'transformation-matrix',
+      };
+    }
+  }
+
+  // Fallback to geometric landmark estimation
+  if (landmarks && landmarks.length >= 33) {
+    const leftEye = landmarks[33] || { x: 0.38, y: 0.38, z: 0 };
+    const rightEye = landmarks[263] || (landmarks.length > 8 ? landmarks[8] : { x: 0.62, y: 0.38, z: 0 });
+    const noseTip = (landmarks.length > 4 ? landmarks[4] : null) || { x: 0.50, y: 0.52, z: 0 };
+    const chin = (landmarks.length > 152 ? landmarks[152] : null) || { x: 0.50, y: 0.82, z: 0 };
+    const forehead = (landmarks.length > 10 ? landmarks[10] : null) || { x: 0.50, y: 0.22, z: 0 };
+
+    const roll = Math.atan2(rightEye.y - leftEye.y, rightEye.x - leftEye.x) * (180 / Math.PI);
+
+    const eyeMidX = (leftEye.x + rightEye.x) / 2;
+    const eyeDist = Math.max(0.01, Math.abs(rightEye.x - leftEye.x));
+    const yawRatio = (noseTip.x - eyeMidX) / eyeDist;
+    const yaw = Math.max(-45, Math.min(45, yawRatio * 90));
+
+    const eyeMidY = (leftEye.y + rightEye.y) / 2;
+    const faceH = Math.max(0.01, chin.y - forehead.y);
+    const noseYRatio = (noseTip.y - eyeMidY) / faceH;
+    const pitch = Math.max(-40, Math.min(40, (0.35 - noseYRatio) * 120));
+
+    return {
+      pitch: Math.round(pitch * 10) / 10,
+      yaw: Math.round(yaw * 10) / 10,
+      roll: Math.round(roll * 10) / 10,
+      source: 'geometric-landmark-estimate',
+    };
+  }
+
+  return { pitch: 0, yaw: 0, roll: 0, source: 'geometric-landmark-estimate' };
+}
+
 export class MediaPipeFaceDetectionAdapter implements IFaceDetectionService {
   private state: FaceDetectionState = 'uninitialized';
   private errorMessage: string | null = null;
@@ -98,8 +157,8 @@ export class MediaPipeFaceDetectionAdapter implements IFaceDetectionService {
             modelAssetPath,
             delegate: preferredDelegate,
           },
-          outputFaceBlendshapes: false,
-          outputFacialTransformationMatrixes: false,
+          outputFaceBlendshapes: true,
+          outputFacialTransformationMatrixes: true,
           runningMode: 'IMAGE',
           numFaces: maxFaces,
         });
@@ -113,8 +172,8 @@ export class MediaPipeFaceDetectionAdapter implements IFaceDetectionService {
                 modelAssetPath,
                 delegate: 'CPU',
               },
-              outputFaceBlendshapes: false,
-              outputFacialTransformationMatrixes: false,
+              outputFaceBlendshapes: true,
+              outputFacialTransformationMatrixes: true,
               runningMode: 'IMAGE',
               numFaces: maxFaces,
             });
@@ -146,8 +205,18 @@ export class MediaPipeFaceDetectionAdapter implements IFaceDetectionService {
     source: HTMLImageElement | ImageBitmap | HTMLCanvasElement
   ): Promise<FaceDetectionResult> {
     if (this.state !== 'ready' || !this.landmarker) {
-      // Attempt lazy initialization if uninitialized
-      if (this.state === 'uninitialized') {
+      // If currently initializing, await in-flight initialization
+      if (this.initPromise) {
+        const initialized = await this.initPromise;
+        if (!initialized || !this.landmarker) {
+          return {
+            detected: false,
+            faceCount: 0,
+            errorMessage: this.errorMessage || 'Face detection engine failed to initialize.',
+            timestamp: Date.now(),
+          };
+        }
+      } else if (this.state === 'uninitialized') {
         const initialized = await this.initialize();
         if (!initialized || !this.landmarker) {
           return {
@@ -176,6 +245,8 @@ export class MediaPipeFaceDetectionAdapter implements IFaceDetectionService {
       const latencyMs = Math.round(performance.now() - startTime);
 
       const rawLandmarks = detectionResult.faceLandmarks;
+      const rawBlendshapes = detectionResult.faceBlendshapes;
+      const rawMatrices = detectionResult.facialTransformationMatrixes;
       if (!rawLandmarks || rawLandmarks.length === 0) {
         this.setState(previousState, null);
         return {
@@ -192,6 +263,21 @@ export class MediaPipeFaceDetectionAdapter implements IFaceDetectionService {
           y: pt.y,
           z: pt.z,
         }));
+
+        let blendshapes: Record<string, number> | undefined;
+        if (rawBlendshapes && rawBlendshapes[idx]?.categories) {
+          blendshapes = {};
+          for (const cat of rawBlendshapes[idx].categories) {
+            blendshapes[cat.categoryName] = Math.round(cat.score * 1000) / 1000;
+          }
+        }
+
+        let matrixData: number[] | undefined;
+        if (rawMatrices && rawMatrices[idx]?.data) {
+          matrixData = Array.from(rawMatrices[idx].data);
+        }
+
+        const pose = computePoseAngles(matrixData, lms);
 
         let minX = 1, minY = 1, maxX = 0, maxY = 0;
         for (const pt of lms) {
@@ -227,6 +313,9 @@ export class MediaPipeFaceDetectionAdapter implements IFaceDetectionService {
           },
           area,
           centerDistance,
+          blendshapes,
+          facialTransformationMatrix: matrixData,
+          pose,
           score,
         };
       });
@@ -247,15 +336,21 @@ export class MediaPipeFaceDetectionAdapter implements IFaceDetectionService {
         faceCount: rawLandmarks.length,
         selectedFaceIndex: selectedFace.index,
         selectionMessage,
-        allFaces: detectedFaces.map(({ index, landmarks, boundingBox, area, centerDistance }) => ({
+        allFaces: detectedFaces.map(({ index, landmarks, boundingBox, area, centerDistance, blendshapes, facialTransformationMatrix, pose }) => ({
           index,
           landmarks,
           boundingBox,
           area,
           centerDistance,
+          blendshapes,
+          facialTransformationMatrix,
+          pose,
         })),
         landmarks: selectedFace.landmarks,
         boundingBox: selectedFace.boundingBox,
+        blendshapes: selectedFace.blendshapes,
+        facialTransformationMatrix: selectedFace.facialTransformationMatrix,
+        pose: selectedFace.pose,
         latencyMs,
         timestamp: Date.now(),
       };

@@ -1,5 +1,5 @@
 /**
- * CodeMyFace Portrait Model — Phase 2
+ * CodeMyFace Portrait Model
  * Structured, typed representation of a geometric vector portrait.
  * Stores normalized geometry, feature layers, palette, and component metadata.
  * All coordinates are normalized [0,1] relative to the portrait canvas.

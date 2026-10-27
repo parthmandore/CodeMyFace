@@ -7,28 +7,45 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies and Build Output
 node_modules
 dist
 dist-ssr
 *.local
+.vite
 
-# Editor directories and files
+# Environment and Secrets
+.env
+.env.*
+!.env.example
+
+# Editor and OS
 .vscode/*
 !.vscode/extensions.json
 .idea
 .DS_Store
+Thumbs.db
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
 
-# Photos and baseline folders
+# Local test media and artifacts (prevent accidental commits)
 *.jpg
 *.jpeg
 *.png
 *.webp
+*.gif
+*.bmp
+*.svg
+!public/favicon.svg
+!public/icons.svg
+test-photos/
 baselines/
-tests/fixtures/
 backups/
+bench/
+screenshots/
 scratch/
+tests/
+test-results/

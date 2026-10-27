@@ -1,0 +1,1949 @@
+/* ==========================================================================
+   CodeMyFace V4 "Atelier" Stylesheet
+   Concept: A painter's studio. Honest craft, typographic precision.
+   Strict Token Architecture — No neon, no pills, no glow, no glass blur.
+   ========================================================================== */
+
+@property --accent {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #FF4F2E;
+}
+
+:root {
+  /* Atelier Core Tokens */
+  --ink: #14110F;        /* App background */
+  --ink-2: #1C1815;      /* Panels */
+  --ink-3: #26211D;      /* Raised surfaces / hover */
+  --line: #3A332D;       /* 1px hairline borders */
+  
+  --paper: #ECE5D6;      /* Main text */
+  --paper-dim: #A59C8C;  /* Secondary / meta text */
+  
+  --vermilion: #FF4F2E;  /* Default accent */
+  --moss: #9DB48A;       /* Success only / numbers */
+  
+  --accent: var(--vermilion);
+  --accent-rgb: 255, 79, 46;
+
+  /* Typography */
+  --font-serif: 'Instrument Serif', Georgia, 'Times New Roman', serif;
+  --font-sans: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Atelier Spacing Scale (strictly 4 / 8 / 12 / 16 / 24) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+
+  /* Atelier Type Scale (strictly 13 / 15 / 18 / 28) */
+  --text-1: 13px;
+  --text-2: 15px;
+  --text-3: 18px;
+  --text-4: 28px;
+
+  color-scheme: dark;
+}
+
+/* Base App Wrapper: Fills entire screen, never scrolls */
+.v4-app-container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  overflow: hidden;
+  position: relative;
+  user-select: none;
+  transition: --accent 600ms ease;
+}
+
+/* Theme Polish: Focus Visible, Selection, Caret & 3px Thin Scrollbars */
+:focus-visible {
+  outline: 1px solid var(--accent) !important;
+  outline-offset: 1px !important;
+}
+
+::selection {
+  background-color: rgba(var(--accent-rgb, 255, 79, 46), 0.28) !important;
+  color: var(--paper) !important;
+}
+
+input, textarea {
+  caret-color: var(--accent);
+}
+
+/* Thin custom scrollbars (3-4px) */
+*::-webkit-scrollbar {
+  width: 3px;
+  height: 3px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 2px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--paper-dim);
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+
+/* Subtle Global Drag-and-Drop Overlay Indicator */
+.v4-drag-overlay {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(20, 17, 15, 0.88);
+  border: 1px solid var(--accent);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  pointer-events: none;
+  animation: atelierFadeIn 160ms ease-out;
+}
+
+.v4-drag-overlay__title {
+  font-family: var(--font-serif);
+  font-size: 32px;
+  font-style: italic;
+  color: var(--paper);
+  margin-top: 14px;
+}
+
+.v4-drag-overlay__subtitle {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--paper-dim);
+  margin-top: 6px;
+}
+
+/* ==========================================================================
+   44px Slim Atelier Header
+   Wordmark left, actions right.
+   ========================================================================== */
+.v4-header {
+  height: 44px;
+  min-height: 44px;
+  max-height: 44px;
+  background-color: var(--ink);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  z-index: 50;
+  box-sizing: border-box;
+}
+
+.v4-header__left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.v4-wordmark {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--paper);
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: baseline;
+}
+
+.v4-wordmark-face {
+  font-style: italic;
+  font-family: var(--font-serif);
+  color: var(--paper);
+  margin-left: 1px;
+}
+
+.v4-header__right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ==========================================================================
+   Atelier Button & Input Tokens
+   Radius 2px max, 1px hairline borders, plain text. Exactly one solid accent button.
+   ========================================================================== */
+.v4-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 12px;
+  height: 28px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 400;
+  border-radius: 2px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-sizing: border-box;
+  text-decoration: none;
+  background-color: transparent;
+  color: var(--paper);
+  border: 1px solid var(--line);
+  transition: background-color 160ms ease-out, border-color 160ms ease-out, color 160ms ease-out, transform 160ms ease-out;
+}
+
+.v4-btn:hover:not(:disabled) {
+  background-color: var(--ink-3);
+  border-color: var(--line);
+  color: var(--paper);
+}
+
+.v4-btn:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+.v4-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Exactly one solid accent button on screen: "Paint it" */
+.v4-btn--accent {
+  background-color: var(--accent);
+  color: var(--ink);
+  border: 1px solid var(--accent);
+  font-weight: 500;
+  transition: background-color 600ms ease, border-color 600ms ease, color 160ms ease-out;
+}
+
+.v4-btn--accent:hover:not(:disabled) {
+  filter: brightness(1.08);
+  border-color: var(--accent);
+  background-color: var(--accent);
+  color: var(--ink);
+}
+
+.v4-btn--ghost {
+  border-color: transparent;
+  color: var(--paper-dim);
+}
+
+.v4-btn--ghost:hover:not(:disabled) {
+  background-color: var(--ink-3);
+  border-color: var(--line);
+  color: var(--paper);
+}
+
+/* Plain text select with 1px border */
+.v4-select {
+  height: 28px;
+  padding: 0 8px;
+  background-color: var(--ink);
+  color: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  outline: none;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: border-color 160ms ease-out, background-color 160ms ease-out;
+}
+
+.v4-select:hover {
+  background-color: var(--ink-2);
+}
+
+.v4-select:focus {
+  border-color: var(--accent);
+}
+
+/* ==========================================================================
+   Two-Pane Workspace Layout
+   ========================================================================== */
+.v4-workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+  height: calc(100vh - 44px);
+  position: relative;
+  background-color: var(--ink);
+}
+
+/* 1px Hairline Draggable Dividers */
+.v4-pane-divider {
+  width: 5px;
+  background-color: var(--line);
+  cursor: col-resize;
+  position: relative;
+  z-index: 30;
+  transition: background-color 160ms ease-out;
+  user-select: none;
+}
+
+.v4-pane-divider:hover,
+.v4-pane-divider.is-dragging {
+  background-color: var(--accent);
+}
+
+.v4-horizontal-divider {
+  height: 5px;
+  background-color: var(--line);
+  cursor: row-resize;
+  position: relative;
+  z-index: 30;
+  transition: background-color 160ms ease-out;
+  user-select: none;
+}
+
+.v4-horizontal-divider:hover,
+.v4-horizontal-divider.is-dragging {
+  background-color: var(--accent);
+}
+
+/* Left Pane: Code Editor */
+.v4-left-pane {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--ink-2);
+  overflow: hidden;
+  height: 100%;
+  border-right: 1px solid var(--line);
+}
+
+/* Right Pane: Result on top, Terminal on bottom */
+.v4-right-pane {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--ink-2);
+  overflow-x: hidden;
+  overflow-y: hidden;
+  height: 100%;
+  min-width: 0;
+  flex: 1;
+}
+
+/* ==========================================================================
+   RESULT PANE
+   Paper-grain background (4% noise), frame with crop marks, one-line caption.
+   ========================================================================== */
+.v4-result-section {
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  background-color: var(--ink-2);
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+}
+
+/* Sub-toolbar (Sentence case, flat tab-like buttons) */
+.v4-pane-toolbar {
+  height: 36px;
+  min-height: 36px;
+  background-color: var(--ink);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  flex-shrink: 0;
+}
+
+.v4-pane-toolbar::-webkit-scrollbar {
+  display: none;
+}
+
+.v4-pane-toolbar__left {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.v4-pane-toolbar__right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Flat segmented buttons (no pills) */
+.v4-segmented-group {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.v4-segmented-item {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  font-size: 13px;
+  font-family: var(--font-sans);
+  color: var(--paper-dim);
+  background: transparent;
+  border: none;
+  border-right: 1px solid var(--line);
+  cursor: pointer;
+  transition: color 160ms ease-out, background-color 160ms ease-out;
+}
+
+.v4-segmented-item:last-child {
+  border-right: none;
+}
+
+.v4-segmented-item:hover {
+  color: var(--paper);
+  background-color: var(--ink-3);
+}
+
+.v4-segmented-item.is-active {
+  background-color: var(--ink-3);
+  color: var(--paper);
+  font-weight: 500;
+}
+
+/* 4% Noise Paper-Grain Background Canvas */
+.v4-viewport-canvas {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+  padding: 16px;
+  box-sizing: border-box;
+  background-color: var(--ink-2);
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.04'/%3E%3C/svg%3E");
+}
+
+/* Atelier Photo Frame (One soft shadow only) */
+.atelier-frame {
+  position: relative;
+  background-color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: calc(100% - 24px);
+  max-height: calc(100% - 24px);
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.atelier-frame-content {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+}
+
+.atelier-zoom-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* Crop Marks at Four Corners */
+.atelier-crop-mark {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+  transition: transform 200ms ease-out, border-color 200ms ease-out;
+  border-color: var(--line);
+  z-index: 20;
+}
+
+.atelier-crop-mark--tl {
+  top: -6px;
+  left: -6px;
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+}
+
+.atelier-crop-mark--tr {
+  top: -6px;
+  right: -6px;
+  border-top: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+}
+
+.atelier-crop-mark--bl {
+  bottom: -6px;
+  left: -6px;
+  border-bottom: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+}
+
+.atelier-crop-mark--br {
+  bottom: -6px;
+  right: -6px;
+  border-bottom: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+}
+
+/* Drag-over Animation: Corner marks slide inward and turn accent */
+.atelier-frame.is-drag-over .atelier-crop-mark {
+  border-color: var(--accent);
+}
+
+.atelier-frame.is-drag-over .atelier-crop-mark--tl {
+  transform: translate(8px, 8px);
+}
+
+.atelier-frame.is-drag-over .atelier-crop-mark--tr {
+  transform: translate(-8px, 8px);
+}
+
+.atelier-frame.is-drag-over .atelier-crop-mark--bl {
+  transform: translate(8px, -8px);
+}
+
+.atelier-frame.is-drag-over .atelier-crop-mark--br {
+  transform: translate(-8px, -8px);
+}
+
+/* One-line Frame Caption */
+.atelier-caption {
+  width: 100%;
+  max-width: 100%;
+  height: 24px;
+  min-height: 24px;
+  padding: 0 12px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--paper-dim);
+  border-top: 1px solid var(--line);
+  background-color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+/* Empty State Frame */
+.atelier-frame--empty {
+  width: 380px;
+  height: 260px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--ink);
+  cursor: pointer;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.atelier-frame--empty .atelier-crop-mark {
+  border-style: dashed;
+  width: 22px;
+  height: 22px;
+}
+
+.atelier-empty-text {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  font-style: italic;
+  color: var(--paper);
+  text-align: center;
+  max-width: 260px;
+  line-height: 1.4;
+}
+
+.atelier-empty-subtext {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--paper-dim);
+  margin-top: 10px;
+}
+
+/* Image Previews within Frame */
+.v4-preview-img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  display: block;
+}
+
+.v4-painting-canvas {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  display: block;
+}
+
+/* Step 5: Control Row directly below Picture Frame */
+.atelier-control-row {
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--ink-2);
+  border-top: 1px solid var(--line);
+  flex-shrink: 0;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+/* Step 4: Atelier Painting 0-100% Control */
+.atelier-painting-control {
+  width: 100%;
+  max-width: 100%;
+  padding: 6px 12px;
+  background-color: var(--ink-2);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.atelier-painting-control__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.atelier-painting-control__title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.atelier-painting-label {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--paper-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 500;
+}
+
+.atelier-painting-num {
+  font-family: var(--font-serif);
+  font-size: 26px;
+  font-style: italic;
+  color: var(--paper);
+  line-height: 1;
+}
+
+.v4-segmented-group--sm {
+  height: 24px;
+}
+
+.v4-segmented-group--sm .v4-segmented-item {
+  height: 22px;
+  padding: 0 10px;
+  font-size: 11px;
+}
+
+.atelier-painting-slider-wrap {
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.atelier-painting-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  background: var(--line);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.atelier-painting-slider:focus {
+  background: var(--ink-3);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.atelier-painting-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  cursor: pointer;
+  transition: transform 0.1s ease, background-color 0.1s ease;
+}
+
+.atelier-painting-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  background: var(--accent);
+}
+
+.atelier-painting-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  cursor: pointer;
+  transition: transform 0.1s ease, background-color 0.1s ease;
+}
+
+.atelier-painting-slider::-moz-range-thumb:hover {
+  transform: scale(1.2);
+  background: var(--accent);
+}
+
+/* Step 4 & 5: Atelier Palette Strip */
+.atelier-palette-strip {
+  width: 100%;
+  max-width: 100%;
+  padding: 4px 12px;
+  background-color: var(--ink-2);
+  border-top: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-sizing: border-box;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.atelier-palette-count {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--paper-dim);
+  white-space: nowrap;
+  letter-spacing: -0.02em;
+  flex-shrink: 0;
+}
+
+.atelier-palette-chips {
+  flex: 1;
+  min-width: 0;
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  padding: 2px 0;
+}
+
+.atelier-palette-chip {
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  animation: chipPopIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+.atelier-palette-chip:hover {
+  transform: scale(1.3);
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.6);
+  z-index: 2;
+}
+
+.atelier-palette-chip.is-active {
+  transform: scale(1.35);
+  border-color: var(--paper);
+  box-shadow: 0 0 0 1px var(--ink), 0 0 0 2px var(--accent);
+  z-index: 3;
+}
+
+@keyframes chipPopIn {
+  from {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Side-by-side & Slider elements */
+.v4-side-by-side-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  height: 100%;
+}
+
+.v4-side-pane {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  min-width: 0;
+}
+
+.v4-side-pane__label {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background-color: var(--ink);
+  border: 1px solid var(--line);
+  padding: 2px 8px;
+  border-radius: 2px;
+  font-size: 12px;
+  color: var(--paper-dim);
+  z-index: 10;
+}
+
+.v4-wipe-slider-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.v4-wipe-image-base {
+  max-width: 100%;
+  max-height: calc(100vh - 280px);
+  object-fit: contain;
+  display: block;
+}
+
+.v4-wipe-overlay {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.v4-wipe-divider-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background-color: var(--accent);
+  cursor: ew-resize;
+  z-index: 25;
+}
+
+.v4-wipe-handle-pill {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 22px;
+  height: 22px;
+  background-color: var(--ink);
+  border: 1px solid var(--accent);
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+}
+
+/* ==========================================================================
+   TERMINAL (studio.log)
+   Prompt character in accent color, timestamps in paper-dim,
+   two-column summary with big numbers in Instrument Serif.
+   ========================================================================== */
+.v4-terminal-section {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  height: 100%;
+}
+
+.v4-terminal-header {
+  height: 36px;
+  min-height: 36px;
+  background-color: var(--ink);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  box-sizing: border-box;
+}
+
+.v4-terminal-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--paper);
+}
+
+.v4-terminal-title-name {
+  color: var(--paper);
+  font-weight: 500;
+}
+
+.v4-terminal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--paper);
+}
+
+.v4-terminal-log {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-family: var(--font-mono);
+}
+
+.v4-terminal-prompt {
+  color: var(--accent);
+  font-weight: 600;
+  user-select: none;
+}
+
+.v4-terminal-time {
+  color: var(--paper-dim);
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.v4-terminal-msg {
+  word-break: break-all;
+  color: var(--paper);
+}
+
+/* Real-time Biometric Palette Card */
+.atelier-palette-card {
+  background-color: var(--ink-2);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.atelier-swatches-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.atelier-swatch-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--paper-dim);
+}
+
+.atelier-swatch-box {
+  width: 12px;
+  height: 12px;
+  border-radius: 1px;
+  border: 1px solid var(--line);
+}
+
+/* Flat atelier progress bar */
+.atelier-progress-card {
+  background-color: var(--ink-2);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+}
+
+.atelier-progress-bar-track {
+  width: 100%;
+  height: 2px;
+  background-color: var(--line);
+  margin-top: 6px;
+  overflow: hidden;
+}
+
+.atelier-progress-bar-fill {
+  height: 100%;
+  background-color: var(--accent);
+  transition: width 200ms ease-out;
+}
+
+/* Two-column Aligned Summary Block with Big Instrument Serif Numbers */
+.atelier-summary-card {
+  margin-top: 14px;
+  background-color: var(--ink-2);
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--accent);
+  border-radius: 2px;
+  padding: 16px 20px;
+}
+
+.atelier-summary-header {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  font-style: italic;
+  color: var(--paper);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.atelier-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.atelier-summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.atelier-summary-label {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--paper-dim);
+}
+
+.atelier-summary-num {
+  font-family: var(--font-serif);
+  font-size: 26px;
+  color: var(--paper);
+  line-height: 1.1;
+  font-weight: 400;
+}
+
+.atelier-summary-num--moss {
+  color: var(--moss);
+}
+
+/* ==========================================================================
+   CODE EDITOR
+   Atelier syntax highlighting, color swatches, 2px active line bar.
+   ========================================================================== */
+.v4-editor-wrap {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background-color: var(--ink-2);
+}
+
+.v4-editor-tabs-bar {
+  height: 36px;
+  min-height: 36px;
+  background-color: var(--ink);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: stretch;
+  padding: 0 10px;
+  gap: 4px;
+  box-sizing: border-box;
+}
+
+.v4-editor-tab {
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--paper-dim);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid transparent;
+  cursor: pointer;
+  transition: color 160ms ease-out;
+}
+
+.v4-editor-tab:hover {
+  color: var(--paper);
+}
+
+.v4-editor-tab.is-active {
+  color: var(--paper);
+  border-bottom-color: var(--accent);
+  font-weight: 500;
+}
+
+.v4-editor-toolbar {
+  height: 36px;
+  min-height: 36px;
+  background-color: var(--ink-2);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  box-sizing: border-box;
+}
+
+.v4-editor-toolbar__group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.v4-editor-status-bar {
+  height: 28px;
+  min-height: 28px;
+  background-color: var(--ink);
+  border-top: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--paper-dim);
+  box-sizing: border-box;
+}
+
+.v4-editor-status-bar__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* CodeMirror Host Element */
+.v4-cm-host {
+  flex: 1;
+  overflow: hidden;
+  height: 100%;
+  position: relative;
+}
+
+.v4-cm-host .cm-editor {
+  height: 100%;
+  background-color: var(--ink-2) !important;
+  color: var(--paper) !important;
+  font-family: var(--font-mono) !important;
+  font-size: 13px;
+}
+
+.v4-cm-host .cm-scroller {
+  font-family: var(--font-mono) !important;
+  line-height: 1.6;
+}
+
+.v4-cm-host .cm-gutters {
+  background-color: var(--ink) !important;
+  border-right: 1px solid var(--line) !important;
+  color: var(--paper-dim) !important;
+}
+
+/* Active line gets a 2px accent bar on the left */
+.v4-cm-host .cm-activeLine {
+  background-color: var(--ink-3) !important;
+  border-left: 2px solid var(--accent) !important;
+}
+
+.v4-cm-host .cm-activeLineGutter {
+  background-color: var(--ink-3) !important;
+  color: var(--paper) !important;
+}
+
+/* Color swatch before every color value in the code */
+.cm-color-swatch {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 1px;
+  border: 1px solid var(--line);
+  margin-right: 5px;
+  vertical-align: middle;
+}
+
+/* XML Syntax Error Banner */
+.v4-xml-error-banner {
+  background-color: var(--ink);
+  border-bottom: 1px solid var(--vermilion);
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--vermilion);
+  font-size: 13px;
+  gap: 8px;
+}
+
+/* Truncation notice */
+.v4-large-file-banner {
+  background-color: var(--ink-3);
+  border-bottom: 1px solid var(--line);
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--paper-dim);
+  font-size: 13px;
+  gap: 8px;
+}
+
+/* ==========================================================================
+   EXPORT & EMBED MODAL ("Use this code")
+   ========================================================================== */
+.v4-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(20, 17, 15, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: atelierFadeIn 160ms ease-out;
+}
+
+.v4-export-modal {
+  width: 100%;
+  max-width: 660px;
+  max-height: 90vh;
+  background-color: var(--ink-2);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: text;
+}
+
+.v4-modal-header {
+  height: 44px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+  background-color: var(--ink);
+}
+
+.v4-modal-title {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  color: var(--paper);
+  font-weight: 400;
+}
+
+.v4-precision-card {
+  padding: 12px 16px;
+  background-color: var(--ink);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.v4-precision-label {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--paper);
+}
+
+.v4-precision-sublabel {
+  font-size: 12px;
+  color: var(--paper-dim);
+}
+
+.v4-precision-chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.v4-chip {
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 2px;
+  border: 1px solid var(--line);
+  background-color: transparent;
+  color: var(--paper-dim);
+  font-size: 12px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 160ms ease-out;
+}
+
+.v4-chip:hover {
+  background-color: var(--ink-3);
+  color: var(--paper);
+}
+
+.v4-chip.is-active {
+  background-color: var(--ink-3);
+  border-color: var(--accent);
+  color: var(--paper);
+  font-weight: 500;
+}
+
+.v4-chip-badge {
+  font-size: 10px;
+  padding: 1px 4px;
+  border-radius: 1px;
+  background-color: var(--line);
+  color: var(--paper-dim);
+}
+
+/* Step 2 sizeOptimizer: Export Size Cards (Compact / Balanced / Max) */
+.v4-export-size-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  width: 100%;
+}
+
+.v4-size-option-card {
+  padding: 8px 10px;
+  border-radius: 2px;
+  border: 1px solid var(--line);
+  background-color: var(--ink-2);
+  color: var(--paper-dim);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+  transition: all 160ms ease-out;
+}
+
+.v4-size-option-card:hover {
+  background-color: var(--ink-3);
+  color: var(--paper);
+}
+
+.v4-size-option-card.is-active {
+  background-color: var(--ink-3);
+  border-color: var(--accent);
+  color: var(--paper);
+}
+
+.v4-size-option-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--paper);
+}
+
+.v4-size-badge-lossless {
+  font-size: 10px;
+  padding: 1px 4px;
+  border-radius: 1px;
+  background-color: rgba(157, 180, 138, 0.2);
+  color: var(--moss);
+  border: 1px solid rgba(157, 180, 138, 0.35);
+}
+
+.v4-size-option-metrics {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--paper);
+}
+
+.v4-size-ssim {
+  color: var(--moss);
+  font-size: 10px;
+}
+
+.v4-size-option-desc {
+  font-size: 10px;
+  color: var(--paper-dim);
+  line-height: 1.25;
+}
+
+.v4-modal-tabs {
+  display: flex;
+  align-items: center;
+  background-color: var(--ink);
+  border-bottom: 1px solid var(--line);
+  overflow-x: auto;
+}
+
+.v4-modal-tab {
+  height: 38px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--paper-dim);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 160ms ease-out;
+}
+
+.v4-modal-tab:hover {
+  color: var(--paper);
+}
+
+.v4-modal-tab.is-active {
+  color: var(--paper);
+  border-bottom-color: var(--accent);
+  font-weight: 500;
+}
+
+.v4-modal-body {
+  padding: 16px;
+  overflow-y: auto;
+  max-height: calc(90vh - 170px);
+}
+
+.v4-export-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.v4-how-to-use-box {
+  background-color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--paper-dim);
+}
+
+.v4-how-to-use-box code {
+  font-family: var(--font-mono);
+  background-color: var(--ink-3);
+  padding: 1px 4px;
+  border-radius: 1px;
+  color: var(--paper);
+}
+
+.v4-code-preview-box {
+  background-color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 12px;
+  max-height: 160px;
+  overflow: auto;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--paper);
+  line-height: 1.4;
+  white-space: pre;
+}
+
+.v4-export-actions-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* ==========================================================================
+   Mobile Tabs (< 1100px)
+   ========================================================================== */
+.v4-mobile-tabs-bar {
+  display: none;
+  height: 38px;
+  min-height: 38px;
+  background-color: var(--ink);
+  border-bottom: 1px solid var(--line);
+  box-sizing: border-box;
+}
+
+@media (max-width: 1099px) {
+  .v4-header {
+    padding: 0 10px;
+  }
+
+  .v4-select {
+    max-width: 130px;
+    font-size: 12px;
+  }
+
+  .v4-mobile-tabs-bar {
+    display: flex;
+    align-items: stretch;
+  }
+  
+  .v4-mobile-tab-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--paper-dim);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+  }
+  
+  .v4-mobile-tab-btn.is-active {
+    color: var(--paper);
+    border-bottom-color: var(--accent);
+  }
+  
+  .v4-workspace {
+    flex-direction: column;
+    height: calc(100vh - 44px - 38px);
+  }
+  
+  .v4-pane-divider,
+  .v4-horizontal-divider {
+    display: none !important;
+  }
+  
+  .v4-left-pane,
+  .v4-right-pane,
+  .v4-result-section,
+  .v4-terminal-section {
+    width: 100% !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    flex: 1 !important;
+  }
+
+  .v4-left-pane.mobile-hidden,
+  .v4-right-pane.mobile-hidden,
+  .v4-result-section.mobile-hidden,
+  .v4-terminal-section.mobile-hidden {
+    display: none !important;
+  }
+}
+
+/* Animations & Reduced Motion */
+@keyframes atelierFadeIn {
+  from { opacity: 0; transform: translateY(-2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ==========================================================================
+   Step 3 Atelier Theme Polish Components
+   ========================================================================== */
+
+/* 1. Collapsible studio.log Bar */
+.v4-terminal-section.is-collapsed {
+  overflow: hidden;
+}
+
+.v4-terminal-collapsed-bar {
+  height: 34px;
+  min-height: 34px;
+  background-color: var(--ink-2);
+  border-top: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  cursor: pointer;
+  user-select: none;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  transition: background-color 150ms ease;
+  box-sizing: border-box;
+}
+
+.v4-terminal-collapsed-bar:hover {
+  background-color: var(--ink-3);
+}
+
+.v4-terminal-collapsed-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+
+.v4-terminal-collapsed-preview {
+  color: var(--paper-dim);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.v4-terminal-collapsed-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.v4-terminal-shortcut-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--paper-dim);
+  background-color: var(--ink);
+}
+
+.v4-terminal-expand-text {
+  font-size: 12px;
+  color: var(--paper-dim);
+}
+
+/* 2. Focus Mode (Full Screen Painting Hero) */
+.v4-focus-mode {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background-color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px;
+  box-sizing: border-box;
+  animation: atelierFadeIn 180ms ease-out;
+}
+
+.v4-focus-header {
+  width: 100%;
+  max-width: 1200px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px;
+}
+
+.v4-focus-title {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  font-style: italic;
+  color: var(--paper);
+}
+
+.v4-focus-hint {
+  font-size: 13px;
+  color: var(--paper-dim);
+}
+
+.v4-focus-viewport {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-height: calc(100vh - 160px);
+  padding: 16px 0;
+  position: relative;
+}
+
+.v4-focus-controls {
+  width: 100%;
+  max-width: 480px;
+  margin-bottom: 8px;
+}
+
+/* 3. Floating Toast Notifications */
+.atelier-toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 10000;
+  pointer-events: none;
+}
+
+.atelier-toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--ink-2);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 8px 16px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--paper);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+  animation: atelierToastIn 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.atelier-toast.is-fading {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+.atelier-toast-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--accent);
+  flex-shrink: 0;
+}
+
+.atelier-toast--success .atelier-toast-dot {
+  background-color: var(--moss);
+}
+
+.atelier-toast--warn .atelier-toast-dot {
+  background-color: #E5A93C;
+}
+
+.atelier-toast--error .atelier-toast-dot {
+  background-color: var(--vermilion);
+}
+
+.atelier-toast--error {
+  border-color: var(--vermilion);
+}
+
+@keyframes atelierToastIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* 4. Tidy View Menu Dropdown in Code Editor */
+.atelier-dropdown-menu {
+  background-color: var(--ink-2);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.atelier-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 6px 8px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--paper);
+  background: transparent;
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 120ms ease;
+}
+
+.atelier-menu-item:hover {
+  background-color: var(--ink-3);
+}
+
+.atelier-menu-check {
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.atelier-menu-divider {
+  height: 1px;
+  background-color: var(--line);
+  margin: 4px 0;
+}
+
+.atelier-menu-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+}
+
+/* 5. Caption & Palette Details */
+.atelier-caption-filename {
+  color: var(--paper-dim);
+  opacity: 0.85;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 60%;
+}
+
+.atelier-caption-dims {
+  color: var(--paper-dim);
+  opacity: 0.6;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* CodeMirror Dimmed Path Data */
+.cm-path-data {
+  color: var(--paper-dim) !important;
+  opacity: 0.55;
+}
+
+/* 6. Sketch Intro Canvas */
+.atelier-sketch-intro-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 15;
+}
+
+/* 7. Step 4 Brush-Size Ladder & Style Toggle */
+.v4-header-style-toggle {
+  display: flex;
+  align-items: center;
+  background-color: var(--ink-2);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 1px;
+}
+
+.atelier-brush-ladder {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.atelier-brush-ladder__circles {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.atelier-brush-circle {
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background-color: var(--ink-3);
+  padding: 0;
+  cursor: pointer;
+  transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.atelier-brush-circle:hover {
+  border-color: var(--paper-dim);
+  transform: scale(1.15);
+}
+
+.atelier-brush-circle.is-passed {
+  background-color: var(--line);
+  border-color: var(--paper-dim);
+}
+
+.atelier-brush-circle.is-active {
+  background-color: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 8px rgba(var(--accent-rgb, 255, 79, 46), 0.55);
+  transform: scale(1.25);
+}
+
+.atelier-brush-ladder__meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--paper-dim);
+}
+
+.atelier-brush-ladder__pass {
+  color: var(--paper);
+  font-weight: 500;
+}
+
+.atelier-brush-ladder__radius {
+  color: var(--accent);
+}
+
+.atelier-brush-ladder__count {
+  opacity: 0.85;
+}

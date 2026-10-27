@@ -1,5 +1,5 @@
 import React from 'react';
-import { Cpu, ShieldCheck, Code, Layers } from 'lucide-react';
+import { Cpu, ShieldCheck, Layers, Sparkles } from 'lucide-react';
 import { StatusPill, StatusPillVariant } from '../common/StatusPill';
 import { FaceDetectionState } from '../../services/faceDetection/types';
 
@@ -14,7 +14,7 @@ export interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({
   currentView,
   onViewChange,
-  hasValidImage,
+  hasValidImage: _hasValidImage,
   engineState,
   onInitEngine,
 }) => {
@@ -83,7 +83,7 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="brand-logo__name">
               Code<span className="accent-gradient">MyFace</span>
             </span>
-            <span className="brand-logo__badge mono">PHASE 1 · FOUNDATION</span>
+            <span className="brand-logo__badge mono">V4 WORKBENCH</span>
           </div>
         </div>
       </div>
@@ -96,18 +96,16 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={() => onViewChange('upload')}
           >
             <Layers size={16} />
-            <span>Photo Input</span>
+            <span>Photo Upload</span>
           </button>
           <button
             type="button"
             className={`studio-nav__item ${currentView === 'studio' ? 'is-active' : ''}`}
             onClick={() => onViewChange('studio')}
-            disabled={!hasValidImage}
-            title={!hasValidImage ? 'Upload and validate a photo first' : 'Open Workspace Shell'}
+            title="Open Studio Workbench"
           >
-            <Code size={16} />
-            <span>Studio Shell</span>
-            {!hasValidImage && <span className="studio-nav__lock-tag">Locked</span>}
+            <Sparkles size={16} color="var(--accent-primary, #FF4F2E)" />
+            <span>Studio Workbench</span>
           </button>
         </nav>
       </div>
@@ -137,3 +135,5 @@ export const Header: React.FC<HeaderProps> = ({
     </header>
   );
 };
+
+export default Header;

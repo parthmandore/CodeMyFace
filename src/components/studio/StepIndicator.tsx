@@ -24,7 +24,7 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({
           {hasImage ? <Check size={14} /> : <Camera size={14} />}
         </div>
         <div className="stepper-item__content">
-          <span className="stepper-item__tag mono">PHASE 1</span>
+          <span className="stepper-item__tag mono">STEP 1</span>
           <span className="stepper-item__title">
             {hasImage ? (faceDetected ? 'Face Landmark Ready' : 'Photo Calibrated') : 'Photo & Face Input'}
           </span>
@@ -39,7 +39,7 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({
           {isStudio || portraitGenerated ? <Check size={14} /> : <Shapes size={14} />}
         </div>
         <div className="stepper-item__content">
-          <span className="stepper-item__tag mono">PHASE 2</span>
+          <span className="stepper-item__tag mono">STEP 2</span>
           <span className="stepper-item__title">
             {portraitGenerated ? 'Face Likeness Analyzed' : 'Geometric Landmark Analysis'}
           </span>
@@ -54,7 +54,7 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({
           {portraitGenerated ? <Check size={14} /> : <Terminal size={14} />}
         </div>
         <div className="stepper-item__content">
-          <span className="stepper-item__tag mono">PHASE 3 (ACTIVE)</span>
+          <span className="stepper-item__tag mono">STEP 3 (ACTIVE)</span>
           <span className="stepper-item__title">Staged Vector Synthesis & Live SVG Code</span>
         </div>
       </div>

@@ -1,15 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { ValidatedImage } from './types/upload';
-import { PortraitModel } from './types/portrait';
 import { FaceDetectionResult } from './services/faceDetection/types';
 import { useFaceDetection } from './services/faceDetection';
-import { executeProgressivePortraitPipeline } from './engine/v2';
 import { SegmentationService } from './services/segmentation/segmentationService';
-import { faceDetectionService } from './services/faceDetection';
 import { Header } from './components/layout/Header';
 import { StepIndicator } from './components/studio/StepIndicator';
 import { UploadWorkflow } from './components/upload/UploadWorkflow';
-import { StudioStage } from './components/studio/StudioStage';
+import { V4DiagnosticWorkbench } from './components/studio/V4DiagnosticWorkbench';
 import { safeRevokeObjectURL } from './utils/imageLoader';
 import './styles/tokens.css';
 import './styles/base.css';
@@ -18,17 +15,36 @@ import './styles/components.css';
 export const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<'upload' | 'studio'>('upload');
   const [currentImage, setCurrentImage] = useState<ValidatedImage | null>(null);
-  const [portraitModel, setPortraitModel] = useState<PortraitModel | null>(null);
-  const [svgString, setSvgString] = useState<string | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [generationError, setGenerationError] = useState<string | null>(null);
 
-  // Cached detection inputs for retry/regenerate
-  const [lastDetection, setLastDetection] = useState<FaceDetectionResult | null>(null);
-  const [lastImgElement, setLastImgElement] = useState<HTMLImageElement | null>(null);
-
-  // Initialize MediaPipe engine eagerly in background
+  // Initialize MediaPipe engines eagerly in background
   const { state: engineState, initialize: initEngine } = useFaceDetection(true);
+
+  // Direct route detection for #v4-workbench, #studio, etc.
+  useEffect(() => {
+    const checkHash = () => {
+      if (
+        window.location.hash.includes('v4') ||
+        window.location.hash.includes('studio') ||
+        window.location.search.includes('view=v4') ||
+        window.location.search.includes('v4=1')
+      ) {
+        if (currentImage) {
+          setCurrentView('studio');
+        } else {
+          setCurrentView('upload');
+        }
+      }
+    };
+    checkHash();
+    window.addEventListener('hashchange', checkHash);
+    return () => window.removeEventListener('hashchange', checkHash);
+  }, [currentImage]);
+
+  useEffect(() => {
+    SegmentationService.getInstance().initialize().catch((err) => {
+      console.warn('Failed to eagerly initialize SegmentationService:', err);
+    });
+  }, []);
 
   // Clean up object URL when app unmounts
   useEffect(() => {
@@ -40,99 +56,41 @@ export const App: React.FC = () => {
   }, [currentImage]);
 
   const handleImageChange = (newImage: ValidatedImage | null) => {
+    if (currentImage?.objectUrl) {
+      safeRevokeObjectURL(currentImage.objectUrl);
+    }
     setCurrentImage(newImage);
-    setPortraitModel(null);
-    setSvgString(null);
-    setGenerationError(null);
-    setLastDetection(null);
-    setLastImgElement(null);
-    if (!newImage && currentView === 'studio') {
-      setCurrentView('upload');
-    }
   };
 
-  const runSynthesis = async (
-    _detectionResult: FaceDetectionResult,
-    imgElement: HTMLImageElement
+  const handleContinueToStudio = (
+    _detectionResult?: FaceDetectionResult,
+    _imgElement?: HTMLImageElement
   ) => {
-    setIsGenerating(true);
-    setGenerationError(null);
-    try {
-      const photoId = currentImage?.filename.replace(/\.[^/.]+$/, '') || 'portrait';
-      const segmenter = SegmentationService.getInstance();
-      await segmenter.initialize().catch((e) => console.warn('Segmenter init non-fatal:', e));
-
-      const update = await executeProgressivePortraitPipeline(
-        photoId,
-        imgElement,
-        faceDetectionService,
-        segmenter
-      );
-
-      if (update.svg) {
-        setSvgString(update.svg);
-        setCurrentView('studio');
-      } else {
-        setGenerationError(update.error || 'V2 vector reconstruction could not generate SVG.');
-        setCurrentView('studio');
-      }
-    } catch (err) {
-      console.error('Portrait synthesis failed:', err);
-      setGenerationError(err instanceof Error ? err.message : String(err));
-      setCurrentView('studio');
-    } finally {
-      setIsGenerating(false);
-    }
+    setCurrentView('studio');
   };
 
-  const handleContinueToStudio = async (
-    detectionResult?: FaceDetectionResult,
-    imgElement?: HTMLImageElement
-  ) => {
-    if (!currentImage) return;
-
-    if (detectionResult) setLastDetection(detectionResult);
-    if (imgElement) setLastImgElement(imgElement);
-
-    // If face detection succeeded and image element is available, run synthesis
-    if (detectionResult?.detected && imgElement) {
-      await runSynthesis(detectionResult, imgElement);
-    } else {
-      setGenerationError('No face detected in photo. Please ensure a clear face is visible.');
-      setCurrentView('studio');
-    }
-  };
-
-  const handleRegenerate = async () => {
-    if (lastDetection && lastImgElement) {
-      await runSynthesis(lastDetection, lastImgElement);
-    } else {
+  const handleViewChange = (view: 'upload' | 'studio') => {
+    if (view === 'studio' && !currentImage) {
       setCurrentView('upload');
+      return;
     }
-  };
-
-  const handleBackToUpload = () => {
-    setCurrentView('upload');
+    setCurrentView(view);
   };
 
   return (
     <div className="codemyface-app">
-      <Header
-        currentView={currentView}
-        onViewChange={(view) => {
-          if (view === 'studio' && !currentImage) return;
-          setCurrentView(view);
-        }}
-        hasValidImage={Boolean(currentImage)}
-        engineState={engineState}
-        onInitEngine={initEngine}
-      />
-
       {currentView === 'upload' && (
         <>
+          <Header
+            currentView={currentView}
+            onViewChange={handleViewChange}
+            hasValidImage={Boolean(currentImage)}
+            engineState={engineState}
+            onInitEngine={initEngine}
+          />
           <StepIndicator
             hasImage={Boolean(currentImage)}
-            portraitGenerated={Boolean(portraitModel)}
+            portraitGenerated={false}
             currentView={currentView}
           />
           <main className="studio-main-content">
@@ -141,7 +99,7 @@ export const App: React.FC = () => {
                 currentImage={currentImage}
                 onImageChange={handleImageChange}
                 onContinue={handleContinueToStudio}
-                isGenerating={isGenerating}
+                isGenerating={false}
               />
             </div>
           </main>
@@ -149,14 +107,14 @@ export const App: React.FC = () => {
       )}
 
       {currentView === 'studio' && (
-        <main className="studio-main-workspace">
-          <StudioStage
-            image={currentImage}
-            portraitModel={portraitModel}
-            svgString={svgString}
-            onBackToUpload={handleBackToUpload}
-            onRegenerate={handleRegenerate}
-            error={generationError}
+        <main style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+          <V4DiagnosticWorkbench
+            onBackToStudio={() => {
+              setCurrentImage(null);
+              setCurrentView('upload');
+            }}
+            initialImageUrl={currentImage?.objectUrl}
+            initialFileName={currentImage?.file?.name}
           />
         </main>
       )}

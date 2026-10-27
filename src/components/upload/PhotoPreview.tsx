@@ -254,9 +254,9 @@ export const PhotoPreview: React.FC<PhotoPreviewProps> = ({
           {/* Primary Action Button */}
           <div className="calibration-cta-row">
             <div className="calibration-cta-hint">
-              <Sparkles size={14} className="text-accent" />
+              <Sparkles size={14} style={{ color: '#F59E0B' }} />
               <span>
-                Phase 2 Vector Engine: Converts calibrated geometry into a stylized 10-layer geometric vector portrait.
+                Engine V5 (Default): Converts facial geometry into a standalone, offline-ready face.html CAD vector character.
               </span>
             </div>
 
@@ -269,7 +269,7 @@ export const PhotoPreview: React.FC<PhotoPreviewProps> = ({
               isLoading={isGenerating}
               disabled={isAnalyzing}
             >
-              {isGenerating ? 'Synthesizing Vector Portrait...' : 'Generate Vector Portrait'}
+              {isGenerating ? 'Synthesizing V5 Character...' : 'Generate V5 Character (face.html)'}
             </Button>
           </div>
         </div>

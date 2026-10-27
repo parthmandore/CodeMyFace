@@ -401,6 +401,80 @@ export function extractHairGeometryFromMask(
     ? douglasPeucker(normBoundaryPts, 0.007)
     : normBoundaryPts;
 
+  // Validate contour plausibility: reject disconnected noise islands or false positive contours
+  if (simplifiedContour.length < 4) {
+    return {
+      hasHair: false,
+      hasHairSegmentation: false,
+      provenance: 'fallback',
+      silhouettePoints: [],
+      confidence: 0,
+      metrics: {
+        hairPixelCount,
+        totalPixels,
+        hairRatio,
+        hasLongHair: false,
+        hasLongHairLeft: false,
+        hasLongHairRight: false,
+        leftMaxY: leftMaxY / maskH,
+        rightMaxY: rightMaxY / maskH,
+        apexY: minHairY / maskH,
+        isAsymmetric: false,
+        parting: 'open',
+        clothesPixelCountAroundNeck,
+      },
+    };
+  }
+
+  const xs = simplifiedContour.map((p) => p.x);
+  const ys = simplifiedContour.map((p) => p.y);
+  const minContourX = Math.min(...xs);
+  const maxContourX = Math.max(...xs);
+  const minContourY = Math.min(...ys);
+  const contourWidth = maxContourX - minContourX;
+
+  // Compute contour polygon area via shoelace formula
+  let polygonArea = 0;
+  for (let i = 0; i < simplifiedContour.length; i++) {
+    const j = (i + 1) % simplifiedContour.length;
+    polygonArea += simplifiedContour[i].x * simplifiedContour[j].y;
+    polygonArea -= simplifiedContour[j].x * simplifiedContour[i].y;
+  }
+  polygonArea = Math.abs(polygonArea) / 2;
+
+  // Validation: hair contour must encompass the cranial dome
+  // 1. Must span at least 38% of normalized face width
+  // 2. Apex must reach forehead/crown (minContourY <= features.foreheadTop.y + faceHeight * 0.08)
+  // 3. Must have minimum polygon area (>= 0.005)
+  const isCranialApexValid = minContourY <= features.foreheadTop.y + faceHeight * 0.08;
+  const isContourWidthPlausible = contourWidth >= faceWidthNorm * 0.38;
+  const isContourAreaPlausible = polygonArea >= 0.005;
+
+  if (!isCranialApexValid || !isContourWidthPlausible || !isContourAreaPlausible) {
+    // Noise island or false positive detected: reject hair segmentation so pipeline falls back to geometric hair
+    return {
+      hasHair: false,
+      hasHairSegmentation: false,
+      provenance: 'fallback',
+      silhouettePoints: [],
+      confidence: 0,
+      metrics: {
+        hairPixelCount,
+        totalPixels,
+        hairRatio,
+        hasLongHair: false,
+        hasLongHairLeft: false,
+        hasLongHairRight: false,
+        leftMaxY: leftMaxY / maskH,
+        rightMaxY: rightMaxY / maskH,
+        apexY: minHairY / maskH,
+        isAsymmetric: false,
+        parting: 'open',
+        clothesPixelCountAroundNeck,
+      },
+    };
+  }
+
   // 7. Extract Forehead Hairline Points
   // Scan columns across forehead from templeLeft to templeRight to find bottom hair edge
   const hairlinePoints: Vec2[] = [];

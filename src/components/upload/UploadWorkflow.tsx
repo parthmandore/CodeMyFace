@@ -109,9 +109,16 @@ export const UploadWorkflow: React.FC<UploadWorkflowProps> = ({
       {/* Intro hero header explaining photo-to-vector recreation */}
       {!currentImage && (
         <div className="studio-hero">
-          <div className="studio-hero__badge mono">
-            <Sparkles size={13} className="text-accent" />
-            <span>CREATIVE CODE ENGINE</span>
+          <div
+            className="studio-hero__badge mono"
+            style={{
+              borderColor: 'rgba(255, 79, 46, 0.4)',
+              background: 'rgba(255, 79, 46, 0.1)',
+              color: '#FF4F2E',
+            }}
+          >
+            <Sparkles size={13} style={{ color: '#FF4F2E' }} />
+            <span>ENGINE V4 ACTIVE · GEOMETRIC VECTOR PORTRAIT</span>
           </div>
           <h1 className="studio-hero__title">
             Transform Your Portrait into <span className="text-gradient">Original Geometric Vector Code</span>
@@ -132,10 +139,14 @@ export const UploadWorkflow: React.FC<UploadWorkflowProps> = ({
 
       {/* Upload Dropzone (Empty State) or Photo Preview (Loaded State) */}
       {!currentImage ? (
-        <Dropzone
-          onFileSelected={processFile}
-          isValidating={isValidating}
-        />
+        <>
+          <Dropzone
+            onFileSelected={processFile}
+            isValidating={isValidating}
+          />
+
+          {/* Quick Test Sample Fixtures Picker */}
+        </>
       ) : (
         <PhotoPreview
           image={currentImage}
@@ -146,7 +157,7 @@ export const UploadWorkflow: React.FC<UploadWorkflowProps> = ({
         />
       )}
 
-      {/* Feature highlight cards for Phase 1 studio setup */}
+      {/* Feature highlight cards for studio setup */}
       {!currentImage && (
         <div className="studio-features-grid">
           <div className="feature-card">
