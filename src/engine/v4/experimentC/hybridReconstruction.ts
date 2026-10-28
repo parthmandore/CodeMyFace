@@ -107,10 +107,14 @@ function renderSingleFaceFeatures(
 
   const ctrl = options?.styleControls;
   const edgeStrength = ctrl?.edgeStrength ?? 3; // 1 to 5
+  const tier = options?.selectedTier || 'high';
+  const isTier1 = tier === 'tier1' || tier === 'high';
+  const isTier2 = tier === 'tier2' || tier === 'low';
+  const isTier3 = tier === 'tier3';
 
-  const baseUpperLashWidth = 0.9 + edgeStrength * 0.16;
-  const lowerLashOpacity = (0.18 + edgeStrength * 0.05).toFixed(2);
-  const creaseOpacity = (0.14 + edgeStrength * 0.04).toFixed(2);
+  const baseUpperLashWidth = (0.9 + edgeStrength * 0.16) * (isTier3 ? 0.9 : isTier2 ? 0.95 : 1.0);
+  const lowerLashOpacity = isTier3 ? '0.00' : (isTier2 ? ((0.18 + edgeStrength * 0.05) * 0.7).toFixed(2) : (0.18 + edgeStrength * 0.05).toFixed(2));
+  const creaseOpacity = isTier1 ? (0.14 + edgeStrength * 0.04).toFixed(2) : '0.00';
   const nostrilOpacity = (0.35 + edgeStrength * 0.08).toFixed(2);
   const browOpacity = (0.76 + edgeStrength * 0.05).toFixed(2);
 
@@ -224,11 +228,11 @@ function renderSingleFaceFeatures(
 
   // Distant eye suppression
   const leftCreaseDist = Math.abs(toPx(29).y - toPx(159).y);
-  if (leftEyeWidth < 26 || leftCreaseDist < 2.2) {
+  if (leftEyeWidth < 26 || leftCreaseDist < 2.2 || !isTier1) {
     leftCreaseOpacity = '0.00';
   }
   const rightCreaseDist = Math.abs(toPx(259).y - toPx(386).y);
-  if (rightEyeWidth < 26 || rightCreaseDist < 2.2) {
+  if (rightEyeWidth < 26 || rightCreaseDist < 2.2 || !isTier1) {
     rightCreaseOpacity = '0.00';
   }
 
@@ -323,9 +327,9 @@ function renderSingleFaceFeatures(
     </clipPath>
     <clipPath id="v4-c-right-eye-clip${idSuffix}">
       <path d="${rightEyeScleraPath}" />
-    </clipPath>
+    </clipPath>${!isTier3 ? `
     <!-- Face ${faceIndex} Sclera Shading Gradients -->
-    <linearGradient id="v4-sclera-depth-left${idSuffix}" x1="0" y1="0" x2="0" y2="1">
+    ${isTier1 ? `<linearGradient id="v4-sclera-depth-left${idSuffix}" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="${scleraCornerHex}" />
       <stop offset="35%" stop-color="${colorPalette.sclera.hex}" />
       <stop offset="100%" stop-color="${scleraCornerHex}" />
@@ -334,7 +338,7 @@ function renderSingleFaceFeatures(
       <stop offset="0%" stop-color="${scleraCornerHex}" />
       <stop offset="35%" stop-color="${colorPalette.sclera.hex}" />
       <stop offset="100%" stop-color="${scleraCornerHex}" />
-    </linearGradient>
+    </linearGradient>` : ''}
     <!-- Face ${faceIndex} Iris Depth Gradients -->
     <radialGradient id="v4-iris-depth-left${idSuffix}" cx="50%" cy="50%" r="50%">
       <stop offset="0%" stop-color="${colorPalette.iris.leftIrisSampled}" />
@@ -345,43 +349,43 @@ function renderSingleFaceFeatures(
       <stop offset="0%" stop-color="${colorPalette.iris.rightIrisSampled}" />
       <stop offset="72%" stop-color="${colorPalette.iris.rightIrisSampled}" />
       <stop offset="100%" stop-color="${rightLimbalHex}" stop-opacity="0.90" />
-    </radialGradient>`;
+    </radialGradient>` : ''}`;
 
   const markup = `
     <g id="v4-face${idSuffix ? `-${faceIndex}` : ''}-features">
       <!-- Planar Shading -->
-      <g id="v4-c-planar-shading${idSuffix}">
-        <path d="${noseBridgeShadow}" fill="${colorPalette.skin.shadow}" opacity="0.08" />
+      ${!isTier3 ? `<g id="v4-c-planar-shading${idSuffix}">
+        ${isTier1 ? `<path d="${noseBridgeShadow}" fill="${colorPalette.skin.shadow}" opacity="0.08" />` : ''}
         <path d="${noseBridgeHighlight}" fill="none" stroke="${colorPalette.skin.highlight}" stroke-width="1.5" stroke-linecap="round" opacity="0.30" />
         <ellipse cx="${noseTip.x.toFixed(1)}" cy="${(noseTip.y - 1).toFixed(1)}" rx="${(width * 0.012).toFixed(1)}" ry="${(height * 0.008).toFixed(1)}" fill="${colorPalette.skin.highlight}" opacity="0.22" />
-      </g>
+      </g>` : ''}
 
       <!-- Left Eye -->
       <g id="v4-c-left-eye${idSuffix}">
-        <path d="${leftEyeScleraPath}" fill="url(#v4-sclera-depth-left${idSuffix})" />
+        <path d="${leftEyeScleraPath}" fill="${isTier1 ? `url(#v4-sclera-depth-left${idSuffix})` : colorPalette.sclera.hex}" />
         <g clip-path="url(#v4-c-left-eye-clip${idSuffix})">
-          <circle cx="${leftIrisCenter.x.toFixed(1)}" cy="${leftIrisCenter.y.toFixed(1)}" r="${leftIrisRadius.toFixed(1)}" fill="url(#v4-iris-depth-left${idSuffix})" />
+          <circle cx="${leftIrisCenter.x.toFixed(1)}" cy="${leftIrisCenter.y.toFixed(1)}" r="${leftIrisRadius.toFixed(1)}" fill="${!isTier3 ? `url(#v4-iris-depth-left${idSuffix})` : colorPalette.iris.leftIrisSampled}" />
           <circle cx="${leftIrisCenter.x.toFixed(1)}" cy="${leftIrisCenter.y.toFixed(1)}" r="${leftPupilRadius.toFixed(1)}" fill="#171419" />
           <ellipse cx="${(leftIrisCenter.x - leftIrisRadius * 0.22).toFixed(1)}" cy="${(leftIrisCenter.y - leftIrisRadius * 0.24).toFixed(1)}" rx="${leftGlintRx.toFixed(1)}" ry="${leftGlintRy.toFixed(1)}" fill="#FFFFFF" opacity="0.85" />
-          ${leftIrisRadius >= 3.2 ? `<ellipse cx="${(leftIrisCenter.x + leftIrisRadius * 0.18).toFixed(1)}" cy="${(leftIrisCenter.y + leftIrisRadius * 0.20).toFixed(1)}" rx="${(leftIrisRadius * 0.08).toFixed(1)}" ry="${(leftIrisRadius * 0.06).toFixed(1)}" fill="#FFFFFF" opacity="0.26" />` : ''}
+          ${isTier1 && leftIrisRadius >= 3.2 ? `<ellipse cx="${(leftIrisCenter.x + leftIrisRadius * 0.18).toFixed(1)}" cy="${(leftIrisCenter.y + leftIrisRadius * 0.20).toFixed(1)}" rx="${(leftIrisRadius * 0.08).toFixed(1)}" ry="${(leftIrisRadius * 0.06).toFixed(1)}" fill="#FFFFFF" opacity="0.26" />` : ''}
         </g>
         <path d="${leftEyeUpperLash}" fill="none" stroke="${colorPalette.brows.hex}" stroke-width="${leftUpperLashWidth}" stroke-linecap="round" />
-        <path d="${leftEyeLowerLash}" fill="none" stroke="${colorPalette.skin.shadow}" stroke-width="${leftLowerLashWidth}" stroke-linecap="round" opacity="${leftLowerOpacity}" />
-        ${parseFloat(leftCreaseOpacity) > 0.02 ? `<path d="${leftCreasePath}" fill="none" stroke="${colorPalette.skin.shadow}" stroke-width="${leftCreaseWidth}" stroke-linecap="round" opacity="${leftCreaseOpacity}" />` : ''}
+        ${!isTier3 && parseFloat(leftLowerOpacity) > 0.02 ? `<path d="${leftEyeLowerLash}" fill="none" stroke="${colorPalette.skin.shadow}" stroke-width="${leftLowerLashWidth}" stroke-linecap="round" opacity="${leftLowerOpacity}" />` : ''}
+        ${isTier1 && parseFloat(leftCreaseOpacity) > 0.02 ? `<path d="${leftCreasePath}" fill="none" stroke="${colorPalette.skin.shadow}" stroke-width="${leftCreaseWidth}" stroke-linecap="round" opacity="${leftCreaseOpacity}" />` : ''}
       </g>
 
       <!-- Right Eye -->
       <g id="v4-c-right-eye${idSuffix}">
-        <path d="${rightEyeScleraPath}" fill="url(#v4-sclera-depth-right${idSuffix})" />
+        <path d="${rightEyeScleraPath}" fill="${isTier1 ? `url(#v4-sclera-depth-right${idSuffix})` : colorPalette.sclera.hex}" />
         <g clip-path="url(#v4-c-right-eye-clip${idSuffix})">
-          <circle cx="${rightIrisCenter.x.toFixed(1)}" cy="${rightIrisCenter.y.toFixed(1)}" r="${rightIrisRadius.toFixed(1)}" fill="url(#v4-iris-depth-right${idSuffix})" />
+          <circle cx="${rightIrisCenter.x.toFixed(1)}" cy="${rightIrisCenter.y.toFixed(1)}" r="${rightIrisRadius.toFixed(1)}" fill="${!isTier3 ? `url(#v4-iris-depth-right${idSuffix})` : colorPalette.iris.rightIrisSampled}" />
           <circle cx="${rightIrisCenter.x.toFixed(1)}" cy="${rightIrisCenter.y.toFixed(1)}" r="${rightPupilRadius.toFixed(1)}" fill="#171419" />
           <ellipse cx="${(rightIrisCenter.x - rightIrisRadius * 0.22).toFixed(1)}" cy="${(rightIrisCenter.y - rightIrisRadius * 0.24).toFixed(1)}" rx="${rightGlintRx.toFixed(1)}" ry="${rightGlintRy.toFixed(1)}" fill="#FFFFFF" opacity="0.85" />
-          ${rightIrisRadius >= 3.2 ? `<ellipse cx="${(rightIrisCenter.x + rightIrisRadius * 0.18).toFixed(1)}" cy="${(rightIrisCenter.y + rightIrisRadius * 0.20).toFixed(1)}" rx="${(rightIrisRadius * 0.08).toFixed(1)}" ry="${(rightIrisRadius * 0.06).toFixed(1)}" fill="#FFFFFF" opacity="0.26" />` : ''}
+          ${isTier1 && rightIrisRadius >= 3.2 ? `<ellipse cx="${(rightIrisCenter.x + rightIrisRadius * 0.18).toFixed(1)}" cy="${(rightIrisCenter.y + rightIrisRadius * 0.20).toFixed(1)}" rx="${(rightIrisRadius * 0.08).toFixed(1)}" ry="${(rightIrisRadius * 0.06).toFixed(1)}" fill="#FFFFFF" opacity="0.26" />` : ''}
         </g>
         <path d="${rightEyeUpperLash}" fill="none" stroke="${colorPalette.brows.hex}" stroke-width="${rightUpperLashWidth}" stroke-linecap="round" />
-        <path d="${rightEyeLowerLash}" fill="none" stroke="${colorPalette.skin.shadow}" stroke-width="${rightLowerLashWidth}" stroke-linecap="round" opacity="${rightLowerOpacity}" />
-        ${parseFloat(rightCreaseOpacity) > 0.02 ? `<path d="${rightCreasePath}" fill="none" stroke="${colorPalette.skin.shadow}" stroke-width="${rightCreaseWidth}" stroke-linecap="round" opacity="${rightCreaseOpacity}" />` : ''}
+        ${!isTier3 && parseFloat(rightLowerOpacity) > 0.02 ? `<path d="${rightEyeLowerLash}" fill="none" stroke="${colorPalette.skin.shadow}" stroke-width="${rightLowerLashWidth}" stroke-linecap="round" opacity="${rightLowerOpacity}" />` : ''}
+        ${isTier1 && parseFloat(rightCreaseOpacity) > 0.02 ? `<path d="${rightCreasePath}" fill="none" stroke="${colorPalette.skin.shadow}" stroke-width="${rightCreaseWidth}" stroke-linecap="round" opacity="${rightCreaseOpacity}" />` : ''}
       </g>
 
       <!-- Eyebrows -->
@@ -405,7 +409,7 @@ function renderSingleFaceFeatures(
         <path d="${upperLipPath}" fill="${colorPalette.lips.upper}" opacity="0.92" />
         <path d="${lowerLipPath}" fill="${colorPalette.lips.lower}" opacity="0.92" />
         ${!isMouthOpen ? `<path d="${mouthPartingPath}" fill="none" stroke="${colorPalette.lips.upper}" stroke-width="1.0" stroke-linecap="round" opacity="0.70" />` : ''}
-        <ellipse cx="${toPx(17).x.toFixed(1)}" cy="${(toPx(17).y - height * 0.003).toFixed(1)}" rx="${(width * 0.018).toFixed(1)}" ry="${(height * 0.004).toFixed(1)}" fill="${colorPalette.skin.highlight}" opacity="0.18" />
+        ${!isTier3 ? `<ellipse cx="${toPx(17).x.toFixed(1)}" cy="${(toPx(17).y - height * 0.003).toFixed(1)}" rx="${(width * 0.018).toFixed(1)}" ry="${(height * 0.004).toFixed(1)}" fill="${colorPalette.skin.highlight}" opacity="0.18" />` : ''}
       </g>
     </g>`;
 
@@ -540,12 +544,15 @@ export function runExperimentC(input: HybridReconstructionInput): V4CandidateRes
   const vis = input.options?.layerVisibility || {};
 
   const isMagentaDebug = !!input.options?.debugMagentaBase;
+  const isTier3 = input.options?.selectedTier === 'tier3';
   const baseFill = isMagentaDebug
     ? '#FF00FF'
-    : (input.options?.useAverageColorBase ? (colorPalette.averagePhotoColor || '#808080') : 'url(#v4-studio-bg)');
+    : (input.options?.useAverageColorBase
+        ? (colorPalette.averagePhotoColor || '#808080')
+        : (isTier3 ? colorPalette.background.hex : 'url(#v4-studio-bg)'));
   // Proven to improve SSIM on 8/8 photos: enable soft skin edge by default unless explicitly disabled
-  const useSoftSkin = input.options?.skinSoftEdge !== false;
-  const softSkinRadius = input.options?.skinSoftEdgeRadius ?? 1.2;
+  const useSoftSkin = !isTier3 && input.options?.skinSoftEdge !== false;
+  const softSkinRadius = input.options?.skinSoftEdgeRadius ?? ((input.options?.selectedTier === 'tier2' || input.options?.selectedTier === 'low') ? 0.8 : 1.2);
 
   // Assemble Final SVG Document with Seamless Stacked Layers (Steps 1, 2, 3)
   const svgString = (input.baseSvg || allFaceMarkup) ? `<?xml version="1.0" encoding="UTF-8"?>
@@ -553,11 +560,12 @@ export function runExperimentC(input: HybridReconstructionInput): V4CandidateRes
   <!-- CodeMyFace V4: High-Fidelity Digital Portrait Painting -->
   <defs>
     <!-- Studio Backdrop Gradient -->
+    ${!isTier3 ? `
     <radialGradient id="v4-studio-bg" cx="50%" cy="38%" r="68%">
       <stop offset="0%" stop-color="${lightenedBg}" />
       <stop offset="70%" stop-color="${colorPalette.background.hex}" />
       <stop offset="100%" stop-color="${vignetteBg}" />
-    </radialGradient>
+    </radialGradient>` : ''}
     ${useSoftSkin ? `
     <filter id="v4-skin-soft-edge" x="-10%" y="-10%" width="120%" height="120%">
       <feGaussianBlur stdDeviation="${softSkinRadius}" />

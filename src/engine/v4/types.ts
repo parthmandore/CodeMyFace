@@ -157,9 +157,12 @@ export interface V4LayerVisibility {
   glasses?: boolean;
 }
 
+export type QualitySetting = 'high' | 'low';
+
 export interface V4ExperimentOptions {
-  // Mode flag: 'recreation' (Candidate A only, faithful copy) vs 'painting' (Candidate C portrait painting studio)
-  mode?: 'recreation' | 'painting';
+  // Mode flag: 'painting' (artistic interpretation) vs 'recreation' (faithful vector copy)
+  mode?: 'painting' | 'recreation';
+  quality?: QualitySetting;
   // Detail Preset (Low 16, Medium 32, High 48, Max 64+)
   detailPreset?: 'low' | 'medium' | 'high' | 'max';
   targetColors?: number;
@@ -198,7 +201,7 @@ export interface V4ExperimentOptions {
 
   // Step 2 Hole Detection Debug Switch
   debugMagentaBase?: boolean;
-  selectedTier?: 'tier1' | 'tier2' | 'tier3';
+  selectedTier?: string;
   targetSizeKb?: number;
   useAverageColorBase?: boolean;
 }

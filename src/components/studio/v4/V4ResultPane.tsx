@@ -4,12 +4,12 @@ import { WorkbenchStatus } from '../../../engine/v4/types';
 
 export type ResultViewMode = 'result' | 'photo' | 'side-by-side' | 'wipe-slider' | 'diff';
 
-import type { AllTiersResult, QualityTier } from '../../../engine/v4/tiers';
+import type { AllQualitiesResult, AllTiersResult, QualitySetting, QualityTier } from '../../../engine/v4/tiers';
 
 export interface V4ResultPaneProps {
-  tiers?: AllTiersResult | null;
-  selectedTier?: QualityTier | 'target';
-  onSelectTier?: (tier: QualityTier | 'target') => void;
+  tiers?: AllQualitiesResult | AllTiersResult | null;
+  selectedTier?: QualitySetting | QualityTier | string;
+  onSelectTier?: (tier: any) => void;
   mode?: 'recreation' | 'painting';
   currentImgUrl: string;
   fileName?: string;
@@ -40,9 +40,9 @@ export interface V4ResultPaneProps {
 export const V4ResultPane: React.FC<V4ResultPaneProps> = ({
   currentImgUrl,
   tiers,
-  selectedTier = 'tier1',
+  selectedTier = 'high',
   onSelectTier,
-  mode = 'recreation',
+  mode = 'painting',
   fileName = 'portrait.jpg',
   svgBlobUrl,
   lastGoodBlobUrl,
@@ -184,9 +184,9 @@ export const V4ResultPane: React.FC<V4ResultPaneProps> = ({
             <button
               className={`v4-segmented-item ${viewMode === 'result' ? 'is-active' : ''}`}
               onClick={() => setViewMode('result')}
-              title="Vector painting output"
+              title={mode === 'recreation' ? 'Vector recreation output' : 'Vector painting output'}
             >
-              <span>Painting</span>
+              <span>{mode === 'recreation' ? 'Recreation' : 'Painting'}</span>
             </button>
 
             <button
@@ -251,15 +251,15 @@ export const V4ResultPane: React.FC<V4ResultPaneProps> = ({
           <button
             className={`v4-btn ${isFocusMode ? 'v4-btn--accent' : ''}`}
             onClick={() => setIsFocusMode(!isFocusMode)}
-            title="Focus mode (F) — view painting full-screen"
+            title={`Focus mode (F) — view ${mode === 'recreation' ? 'recreation' : 'painting'} full-screen`}
           >
             <span>Focus</span>
           </button>
         </div>
       </div>
 
-      {/* Three-Tier Card Selector Bar (Recreation Mode) */}
-      {mode === 'recreation' && tiers && (
+      {/* Two-Quality Card Selector Bar (Painting & Recreation Modes) */}
+      {tiers && (
         <div
           className="v4-tier-cards-bar"
           style={{
@@ -273,36 +273,48 @@ export const V4ResultPane: React.FC<V4ResultPaneProps> = ({
           }}
         >
           <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Tiers:
+            {mode === 'painting' ? 'Painting Quality:' : 'Recreation Quality:'}
           </span>
           {[
-            { id: 'tier1', label: 'High (Tier 1)', data: tiers.tier1, desc: 'Closest photographic copy' },
-            { id: 'tier2', label: 'Medium (Tier 2)', data: tiers.tier2, desc: '40-60% size, safe merging' },
-            { id: 'tier3', label: 'Low (Tier 3)', data: tiers.tier3, desc: '10-20% size, saliency weighted' },
-          ].map((t) => (
-            <button
-              key={t.id}
-              onClick={() => onSelectTier?.(t.id as any)}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '3px 8px',
-                borderRadius: '4px',
-                fontSize: '11px',
-                cursor: 'pointer',
-                border: selectedTier === t.id ? '1px solid var(--accent, #3b82f6)' : '1px solid var(--border-soft, #334155)',
-                background: selectedTier === t.id ? 'rgba(59, 130, 246, 0.2)' : 'rgba(30, 41, 59, 0.5)',
-                color: selectedTier === t.id ? '#93c5fa' : '#cbd5e1',
-              }}
-              title={t.desc}
-            >
-              <strong>{t.label}</strong>
-              <span style={{ color: '#94a3b8' }}>
-                {(t.data?.gzipBytes ? t.data.gzipBytes / 1024 : 0).toFixed(1)} KB gz · {t.data?.pathCount || 0} paths
-              </span>
-            </button>
-          ))}
+            {
+              id: 'high',
+              label: 'High Quality',
+              data: tiers.high || tiers.tier1,
+              desc: mode === 'painting' ? 'Detailed digital portrait painting: fine planes and subtle shading' : 'High-fidelity photographic vector copy: dedicated tones and fine contours',
+            },
+            {
+              id: 'low',
+              label: 'Low Quality',
+              data: tiers.low || tiers.tier2,
+              desc: mode === 'painting' ? 'Balanced painterly brushwork: fast load, preserved likeness' : 'Compact vector reconstruction: preserved structure and reasonable color fidelity',
+            },
+          ].map((t) => {
+            const isSelected = selectedTier === t.id || (t.id === 'high' && selectedTier === 'tier1') || (t.id === 'low' && (selectedTier === 'tier2' || selectedTier === 'tier3'));
+            return (
+              <button
+                key={t.id}
+                onClick={() => onSelectTier?.(t.id as any)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '4px 10px',
+                  borderRadius: '4px',
+                  fontSize: '11px',
+                  cursor: 'pointer',
+                  border: isSelected ? '1px solid var(--accent, #3b82f6)' : '1px solid var(--border-soft, #334155)',
+                  background: isSelected ? 'rgba(59, 130, 246, 0.2)' : 'rgba(30, 41, 59, 0.5)',
+                  color: isSelected ? '#93c5fa' : '#cbd5e1',
+                }}
+                title={t.desc}
+              >
+                <strong>{t.label}</strong>
+                <span style={{ color: '#94a3b8' }}>
+                  {(t.data?.gzipBytes ? t.data.gzipBytes / 1024 : 0).toFixed(1)} KB gz · {t.data?.pathCount || 0} paths
+                </span>
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -334,7 +346,7 @@ export const V4ResultPane: React.FC<V4ResultPaneProps> = ({
             <div className="atelier-crop-mark atelier-crop-mark--bl" />
             <div className="atelier-crop-mark atelier-crop-mark--br" />
 
-            <div className="atelier-empty-text">Drop a photo. We'll paint it in code.</div>
+            <div className="atelier-empty-text">Drop a photo. We'll {mode === 'recreation' ? 'recreate' : 'paint'} it in code.</div>
             <div className="atelier-empty-subtext">or click to browse local files</div>
           </div>
         ) : (
@@ -346,7 +358,95 @@ export const V4ResultPane: React.FC<V4ResultPaneProps> = ({
             <div className="atelier-crop-mark atelier-crop-mark--br" />
 
             {/* Picture Content: Zoom and Pan apply strictly to this inner container */}
-            <div className="atelier-frame-content">
+            <div className="atelier-frame-content" style={{ position: 'relative' }}>
+
+{/* Canvas Progressive Brush Scanner Loading Animation */}
+{isGenerating && (
+  <div
+    style={{
+      position: 'absolute',
+      inset: 0,
+      zIndex: 10,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      pointerEvents: 'none',
+      overflow: 'hidden',
+      borderRadius: '2px',
+    }}
+  >
+    <style>{`
+      @keyframes v4SweepDown {
+        0% { top: 0%; opacity: 0.9; }
+        50% { opacity: 1; }
+        100% { top: 98%; opacity: 0.9; }
+      }
+      @keyframes v4WiggleBrush {
+        0% { transform: translate(-50%, -50%) rotate(-15deg); }
+        100% { transform: translate(-50%, -50%) rotate(15deg); }
+      }
+    `}</style>
+    {/* Sweeping Golden Light Line */}
+    <div
+      style={{
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        height: '3px',
+        background: 'linear-gradient(90deg, transparent, rgba(245,158,11,0.2) 15%, #F59E0B 50%, rgba(245,158,11,0.2) 85%, transparent)',
+        boxShadow: '0 0 16px 3px rgba(245, 158, 11, 0.75)',
+        animation: 'v4SweepDown 2.4s ease-in-out infinite alternate',
+      }}
+    >
+      {/* Animated Paintbrush Traveler */}
+      <div
+        style={{
+          position: 'absolute',
+          top: '-16px',
+          left: '50%',
+          fontSize: '24px',
+          filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.85))',
+          animation: 'v4WiggleBrush 0.6s ease-in-out infinite alternate',
+        }}
+      >
+        🖌️
+      </div>
+    </div>
+    {/* Chic Floating Status Pill */}
+    <div
+      style={{
+        position: 'absolute',
+        bottom: '24px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        padding: '6px 14px',
+        background: 'rgba(15, 23, 42, 0.88)',
+        backdropFilter: 'blur(10px)',
+        border: '1px solid rgba(245, 158, 11, 0.5)',
+        borderRadius: '20px',
+        color: '#F8FAFC',
+        fontSize: '12px',
+        fontFamily: 'monospace',
+        boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
+      }}
+    >
+      <span
+        style={{
+          width: '8px',
+          height: '8px',
+          borderRadius: '50%',
+          backgroundColor: '#F59E0B',
+          boxShadow: '0 0 10px #F59E0B',
+        }}
+      />
+      <span>
+        {mode === 'recreation' ? 'Recreating photographic contours…' : 'Painting digital brushwork planes…'}
+      </span>
+    </div>
+  </div>
+)}
               <div
                 className="atelier-zoom-container"
                 style={{
@@ -420,7 +520,7 @@ export const V4ResultPane: React.FC<V4ResultPaneProps> = ({
                       />
                     </div>
                     <div className="v4-side-pane">
-                      <span className="v4-side-pane__label">Painting</span>
+                      <span className="v4-side-pane__label">{mode === 'recreation' ? 'Recreation' : 'Painting'}</span>
                       {effectiveSvgUrl ? (
                         <img
                           src={effectiveSvgUrl}
@@ -430,7 +530,7 @@ export const V4ResultPane: React.FC<V4ResultPaneProps> = ({
                         />
                       ) : (
                         <div style={{ color: 'var(--paper-dim)' }}>
-                          {isGenerating ? 'Working…' : 'Painting not yet generated'}
+                          {isGenerating ? 'Working…' : mode === 'recreation' ? 'Recreation not yet generated' : 'Painting not yet generated'}
                         </div>
                       )}
                     </div>

@@ -9,16 +9,18 @@
  */
 
 import { optimizeSvgForExport, optimizeSvgAutoSelect } from './sizeOptimizer/exportOptimizer';
+import { optimizeSvgDocument } from './svgOptimizer';
+import { minifySvgDocument } from './sizeOptimizer/svgMinifier';
 import type { NormalizedLandmark } from '../../services/faceDetection/types';
 
-export type QualityTier = 'tier1' | 'tier2' | 'tier3';
+export type QualitySetting = 'high' | 'low';
+export type QualityTier = QualitySetting | 'tier1' | 'tier2' | 'tier3';
 
-export interface TierConfig {
-  id: QualityTier;
+export interface QualityConfig {
+  id: QualitySetting;
   name: string;
   label: string;
   description: string;
-  targetGzipRatio: number; // Relative to Tier 1: 1.0 (Tier 1), 0.50 (Tier 2), 0.15 (Tier 3)
   targetColors: number;
   skinColors: number;
   hairColors: number;
@@ -35,13 +37,14 @@ export interface TierConfig {
   blurdelta: number;
 }
 
-export const TIER_CONFIGS: Record<QualityTier, TierConfig> = {
-  tier1: {
-    id: 'tier1',
+export type TierConfig = QualityConfig;
+
+export const RECREATION_QUALITY_CONFIGS: Record<QualitySetting, QualityConfig> = {
+  high: {
+    id: 'high',
     name: 'High',
-    label: 'High (Tier 1)',
-    description: 'Closest match to photograph: dedicated 24 skin and 20 hair tones, fine contours intact.',
-    targetGzipRatio: 1.0,
+    label: 'High Quality',
+    description: 'Closest photographic copy: dedicated 24 skin and 20 hair tones, fine contours intact.',
     targetColors: 48,
     skinColors: 24,
     hairColors: 20,
@@ -57,16 +60,15 @@ export const TIER_CONFIGS: Record<QualityTier, TierConfig> = {
     blurradius: 1,
     blurdelta: 16,
   },
-  tier2: {
-    id: 'tier2',
-    name: 'Medium',
-    label: 'Medium (Tier 2)',
-    description: 'Balanced 40-60% size reduction with safe compound path merging and preserved contours.',
-    targetGzipRatio: 0.50,
+  low: {
+    id: 'low',
+    name: 'Low',
+    label: 'Low Quality',
+    description: 'Balanced vector recreation: tuned from former Medium, preserved contours, safe compound merging.',
     targetColors: 24,
     skinColors: 14,
     hairColors: 12,
-    pathOmitBase: 24,
+    pathOmitBase: 20, // tuned from 24 to preserve sharper contours without blur
     ltres: 1.0,
     qtres: 1.0,
     underlayColors: 8,
@@ -78,31 +80,86 @@ export const TIER_CONFIGS: Record<QualityTier, TierConfig> = {
     blurradius: 1,
     blurdelta: 16,
   },
-  tier3: {
-    id: 'tier3',
-    name: 'Low',
-    label: 'Low (Tier 3)',
-    description: 'Ultra-compact 10-20% size with saliency weighting, 10-12 colors, and planar geometry.',
-    targetGzipRatio: 0.15,
-    targetColors: 12,
-    skinColors: 8,
-    hairColors: 8,
-    pathOmitBase: 48,
-    ltres: 1.2,
-    qtres: 1.2,
-    underlayColors: 6,
-    underlayBlur: 4,
-    mergeCompoundPaths: true,
-    precision: 0,
+};
+
+export const TIER_CONFIGS: Record<string, QualityConfig> = {
+  high: RECREATION_QUALITY_CONFIGS.high,
+  low: RECREATION_QUALITY_CONFIGS.low,
+  tier1: RECREATION_QUALITY_CONFIGS.high,
+  tier2: RECREATION_QUALITY_CONFIGS.low,
+  tier3: RECREATION_QUALITY_CONFIGS.low,
+};
+
+export interface PaintingQualityConfig {
+  id: QualitySetting;
+  name: string;
+  label: string;
+  description: string;
+  targetColors: number;
+  pathOmitBase: number;
+  mergeCompoundPaths: boolean;
+  precision: number;
+  relativeCommands: boolean;
+  saliencyWeighting: boolean;
+  lashDetail: 'multi-pass' | 'single-pass';
+  creaseLine: boolean;
+  limbalGradient: boolean;
+  dualCatchlight: boolean;
+  softSkinFilter: boolean;
+  softSkinRadius: number;
+}
+
+export type PaintingTierConfig = PaintingQualityConfig;
+
+export const PAINTING_QUALITY_CONFIGS: Record<QualitySetting, PaintingQualityConfig> = {
+  high: {
+    id: 'high',
+    name: 'High',
+    label: 'High Quality',
+    description: 'Detailed digital portrait: expressive anatomical planes, multi-pass lashes, limbal ring gradient, catchlight, soft skin filter.',
+    targetColors: 48,
+    pathOmitBase: 8,
+    mergeCompoundPaths: false,
+    precision: 1,
     relativeCommands: true,
-    saliencyWeighting: true,
-    blurradius: 2,
-    blurdelta: 24,
+    saliencyWeighting: false,
+    lashDetail: 'multi-pass',
+    creaseLine: true,
+    limbalGradient: true,
+    dualCatchlight: true,
+    softSkinFilter: true,
+    softSkinRadius: 1.2,
+  },
+  low: {
+    id: 'low',
+    name: 'Low',
+    label: 'Low Quality',
+    description: 'Balanced painterly brushwork: single-pass lashes, primary catchlight, safe path merging (tuned from former Medium).',
+    targetColors: 24,
+    pathOmitBase: 20,
+    mergeCompoundPaths: true,
+    precision: 1,
+    relativeCommands: true,
+    saliencyWeighting: false,
+    lashDetail: 'single-pass',
+    creaseLine: false,
+    limbalGradient: true,
+    dualCatchlight: false,
+    softSkinFilter: true,
+    softSkinRadius: 0.8,
   },
 };
 
-export interface TierExecutionResult {
-  tier: QualityTier;
+export const PAINTING_TIER_CONFIGS: Record<string, PaintingQualityConfig> = {
+  high: PAINTING_QUALITY_CONFIGS.high,
+  low: PAINTING_QUALITY_CONFIGS.low,
+  tier1: PAINTING_QUALITY_CONFIGS.high,
+  tier2: PAINTING_QUALITY_CONFIGS.low,
+  tier3: PAINTING_QUALITY_CONFIGS.low,
+};
+
+export interface QualityExecutionResult {
+  quality: QualitySetting;
   svgString: string;
   rawBytes: number;
   gzipBytes: number;
@@ -115,12 +172,19 @@ export interface TierExecutionResult {
   executionTimeMs: number;
 }
 
-export interface AllTiersResult {
-  tier1: TierExecutionResult;
-  tier2: TierExecutionResult;
-  tier3: TierExecutionResult;
-  selectedTier: QualityTier;
+export interface AllQualitiesResult {
+  high: QualityExecutionResult;
+  low: QualityExecutionResult;
+  selectedQuality: QualitySetting;
+  // Compatibility aliases
+  tier1: QualityExecutionResult;
+  tier2: QualityExecutionResult;
+  tier3: QualityExecutionResult;
+  selectedTier: string;
 }
+
+export type TierExecutionResult = QualityExecutionResult;
+export type AllTiersResult = AllQualitiesResult;
 
 /**
  * Computes PSNR (Peak Signal-to-Noise Ratio) between two identical-size RGBA buffers.
@@ -242,7 +306,7 @@ export function applySaliencyWeighting(
  */
 export function optimizeSvgForTier(
   svgString: string,
-  tier: QualityTier,
+  tier: QualitySetting | string,
   context?: {
     landmarks?: NormalizedLandmark[];
     width?: number;
@@ -251,7 +315,7 @@ export function optimizeSvgForTier(
 ): { svg: string; rawBytes: number; gzipBytes: number; pathCount: number } {
   let processedSvg = svgString;
 
-  if (tier === 'tier3') {
+  if (tier === 'low' || tier === 'tier2' || tier === 'tier3') {
     // Tier 3: Apply saliency weighting first to drop non-facial micro-shapes
     processedSvg = applySaliencyWeighting(
       processedSvg,
@@ -289,6 +353,80 @@ export function optimizeSvgForTier(
     });
     processedSvg = auto.svg;
   }
+
+  const rawBytes = new TextEncoder().encode(processedSvg).length;
+  const gzipBytes = estimateGzipBytes(processedSvg);
+  const pathMatches = processedSvg.match(/<path\b[^>]*\/?>/gi) || [];
+
+  return {
+    svg: processedSvg,
+    rawBytes,
+    gzipBytes,
+    pathCount: pathMatches.length,
+  };
+}
+
+/**
+ * Optimizes Painting SVG export tailored to a specific tier config.
+ * Preserves anatomical features, clips, and filter definitions while optimizing geometry.
+ */
+export function optimizePaintingSvgForTier(
+  svgString: string,
+  tier: QualitySetting | string,
+  context?: {
+    landmarks?: NormalizedLandmark[];
+    width?: number;
+    height?: number;
+  }
+): { svg: string; rawBytes: number; gzipBytes: number; pathCount: number } {
+  let processedSvg = svgString;
+
+  if (tier === 'low' || tier === 'tier2' || tier === 'tier3') {
+    // Tier 3: Apply saliency weighting first to drop non-facial micro-shapes in base vector
+    processedSvg = applySaliencyWeighting(
+      processedSvg,
+      context?.landmarks,
+      context?.width,
+      context?.height,
+      64
+    );
+
+    // Merge compound paths in base vector leaf groups
+    processedSvg = optimizeSvgDocument(processedSvg);
+
+    // Minify with integer coordinates
+    processedSvg = minifySvgDocument(processedSvg, {
+      preset: 'compact',
+      relativeCommands: true,
+      scale2xViewBox: false,
+      simplifyTolerancePx: 0.3,
+    });
+  } else if (tier === 'tier2') {
+    // Tier 2: Safe compound path merging in base vector leaf groups
+    processedSvg = optimizeSvgDocument(processedSvg);
+
+    // Minify with balanced settings (precision 1)
+    processedSvg = minifySvgDocument(processedSvg, {
+      preset: 'balanced',
+      relativeCommands: true,
+      scale2xViewBox: false,
+      simplifyTolerancePx: 0.15,
+    });
+  } else {
+    // Tier 1: Keep unmerged paths in base vector, lossless color and coordinate minification
+    processedSvg = minifySvgDocument(processedSvg, {
+      preset: 'max',
+      relativeCommands: true,
+      scale2xViewBox: false,
+      simplifyTolerancePx: 0,
+    });
+  }
+
+  // Strip extraneous whitespace between tags
+  processedSvg = processedSvg
+    .replace(/>\s+</g, '><')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
 
   const rawBytes = new TextEncoder().encode(processedSvg).length;
   const gzipBytes = estimateGzipBytes(processedSvg);

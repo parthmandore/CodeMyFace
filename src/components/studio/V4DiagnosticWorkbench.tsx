@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { runV4Pipeline } from '../../engine/v4/v4Pipeline';
 import { V4PipelineResult, V4ExperimentOptions, WorkbenchStatus } from '../../engine/v4/types';
-import { QualityTier, AllTiersResult, binarySearchTargetSize } from '../../engine/v4/tiers';
+import { QualitySetting, AllQualitiesResult } from '../../engine/v4/tiers';
 import { faceDetectionService, NormalizedLandmark } from '../../services/faceDetection';
 import { SegmentationService } from '../../services/segmentation/segmentationService';
 import { V4CodeEditor } from './v4/V4CodeEditor';
@@ -52,10 +52,9 @@ export const V4DiagnosticWorkbench: React.FC<V4DiagnosticWorkbenchProps> = ({
     return "photo.jpg";
   });
 
-  // Three-Tier Architecture State (Step 3)
-  const [selectedTier, setSelectedTier] = useState<QualityTier | 'target'>('tier1');
-  const [targetSizeInput, setTargetSizeInput] = useState<string>('50 KB');
-  const [tiersData, setTiersData] = useState<AllTiersResult | null>(null);
+  // Two-Mode and Two-Quality Architecture State
+  const [selectedQuality, setSelectedQuality] = useState<QualitySetting>('high');
+  const [tiersData, setTiersData] = useState<AllQualitiesResult | null>(null);
 
   // Sync filename when prop changes
   useEffect(() => {
@@ -68,7 +67,7 @@ export const V4DiagnosticWorkbench: React.FC<V4DiagnosticWorkbenchProps> = ({
     }
   }, [initialFileName, initialImageUrl]);
   const [photoAccent, setPhotoAccent] = useState<string>('#FF4F2E');
-  const [workbenchMode, setWorkbenchMode] = useState<'recreation' | 'painting'>('recreation');
+  const [workbenchMode, setWorkbenchMode] = useState<'painting' | 'recreation'>('painting');
   // If no image loaded, redirect to normal upload view
   useEffect(() => {
     if (!currentImgUrl && !startDrag) {
@@ -343,7 +342,9 @@ export const V4DiagnosticWorkbench: React.FC<V4DiagnosticWorkbenchProps> = ({
     async (
       imgUrl: string,
       preset: 'low' | 'medium' | 'high' | 'max' = 'max',
-      _fileNameHint?: string
+      _fileNameHint?: string,
+      overrideMode?: 'painting' | 'recreation',
+      overrideQuality?: QualitySetting
     ) => {
       const runId = ++currentRunIdRef.current;
       skipRequestedRunIdRef.current = null;
@@ -489,7 +490,7 @@ export const V4DiagnosticWorkbench: React.FC<V4DiagnosticWorkbenchProps> = ({
 
         if (primaryLandmarks.length === 0) {
           showToast('No face found, painting anyway', 'warn');
-          addLog('[Vision] No face found, painting anyway.', 'warn', runId);
+          addLog(`[Vision] No face found, ${workbenchMode === 'recreation' ? 'recreating' : 'painting'} anyway.`, 'warn', runId);
         } else {
           addLog(
             `Landmarks detected: ${primaryLandmarks.length} points (${faceCount} face${
@@ -563,11 +564,14 @@ export const V4DiagnosticWorkbench: React.FC<V4DiagnosticWorkbenchProps> = ({
             ? '64+ colors'
             : '48 colors';
 
+        const activeMode = overrideMode || workbenchMode;
+        const activeQuality = overrideQuality || selectedQuality;
+
         const pipelineOptions: V4ExperimentOptions = {
-          mode: workbenchMode,
-          selectedTier: selectedTier === 'target' ? 'tier1' : selectedTier,
-          targetSizeKb: selectedTier === 'target' ? parseFloat(targetSizeInput.replace(/[^0-9.]/g, '')) || 50 : undefined,
-          detailPreset: preset,
+          mode: activeMode,
+          quality: activeQuality,
+          selectedTier: activeQuality,
+          detailPreset: activeQuality === 'high' ? 'max' : 'medium',
           detectedFaceCount: faceCount,
           allFacesLandmarks,
           hasGlasses,
@@ -678,7 +682,10 @@ export const V4DiagnosticWorkbench: React.FC<V4DiagnosticWorkbenchProps> = ({
         if (pipelineResult.tiers) {
           setTiersData(pipelineResult.tiers);
         }
-        const svgOutput = pipelineResult.candidates['candidate-c'].svgString;
+        const isRecreation = activeMode !== 'painting';
+        const svgOutput = isRecreation
+          ? pipelineResult.candidates['candidate-a'].svgString
+          : pipelineResult.candidates['candidate-c'].svgString;
 
         if (runId !== currentRunIdRef.current || abortController.signal.aborted) return;
         const totalDuration = Math.round(performance.now() - t0);
@@ -845,29 +852,14 @@ export const V4DiagnosticWorkbench: React.FC<V4DiagnosticWorkbenchProps> = ({
     [addLog, transitionToStatus]
   );
 
-  // Step 3: Handle Tier Selection (Instantly updates view from shared analysis)
-  const handleTierSelect = useCallback(
-    (tierId: QualityTier | 'target') => {
-      setSelectedTier(tierId);
+  // Handle Quality Selection: High vs Low (Instantly updates view from analysis)
+  const handleQualitySelect = useCallback(
+    (q: QualitySetting) => {
+      setSelectedQuality(q);
       if (!tiersData) return;
 
-      let targetSvg = '';
-      if (tierId === 'tier1') {
-        targetSvg = tiersData.tier1.svgString;
-      } else if (tierId === 'tier2') {
-        targetSvg = tiersData.tier2.svgString;
-      } else if (tierId === 'tier3') {
-        targetSvg = tiersData.tier3.svgString;
-      } else if (tierId === 'target') {
-        const numKb = parseFloat(targetSizeInput.replace(/[^0-9.]/g, '')) || 50;
-        const res = binarySearchTargetSize(tiersData.tier1.svgString, numKb * 1024, {
-          landmarks: detectedLandmarks,
-          width: imageDims.width,
-          height: imageDims.height,
-        });
-        targetSvg = res.svgString;
-        showToast(`Target Size: ${res.pathCount} paths, ${(res.actualGzipBytes / 1024).toFixed(1)} KB gz`, 'info');
-      }
+      const targetData = q === 'low' ? (tiersData.low || tiersData.tier2) : (tiersData.high || tiersData.tier1);
+      const targetSvg = targetData?.svgString;
 
       if (targetSvg) {
         setCurrentSvg(targetSvg);
@@ -885,33 +877,8 @@ export const V4DiagnosticWorkbench: React.FC<V4DiagnosticWorkbenchProps> = ({
         setPaintingLayers(extractPaintingLayers(targetSvg));
       }
     },
-    [tiersData, targetSizeInput, detectedLandmarks, imageDims, showToast]
+    [tiersData]
   );
-
-  const handleApplyTargetSize = useCallback(() => {
-    if (!tiersData) return;
-    const numKb = parseFloat(targetSizeInput.replace(/[^0-9.]/g, '')) || 50;
-    const res = binarySearchTargetSize(tiersData.tier1.svgString, numKb * 1024, {
-      landmarks: detectedLandmarks,
-      width: imageDims.width,
-      height: imageDims.height,
-    });
-    setSelectedTier('target');
-    setCurrentSvg(res.svgString);
-    setOriginalSvg(res.svgString);
-    const blob = new Blob([res.svgString], { type: 'image/svg+xml;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    setSvgBlobUrl((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
-      return url;
-    });
-    setLastGoodBlobUrl((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
-      return url;
-    });
-    setPaintingLayers(extractPaintingLayers(res.svgString));
-    showToast(`Target Size: ${res.pathCount} paths, ${(res.actualGzipBytes / 1024).toFixed(1)} KB gz (${res.withinTolerance ? 'within +/-10%' : 'best fit'})`, 'success');
-  }, [tiersData, targetSizeInput, detectedLandmarks, imageDims, showToast]);
 
   // Unified photo selection handler (Step 1: Immediately show new photo, clear old results/state, cancel old run)
   const handlePhotoSelection = useCallback(
@@ -1060,7 +1027,7 @@ export const V4DiagnosticWorkbench: React.FC<V4DiagnosticWorkbenchProps> = ({
       {isDraggingFile && (
         <div className="v4-drag-overlay">
           <div className="v4-drag-overlay__title">Drop a photograph</div>
-          <div className="v4-drag-overlay__subtitle">We'll paint it in code</div>
+          <div className="v4-drag-overlay__subtitle">{workbenchMode === 'recreation' ? "We'll recreate it in code" : "We'll paint it in code"}</div>
         </div>
       )}
 
@@ -1094,65 +1061,30 @@ export const V4DiagnosticWorkbench: React.FC<V4DiagnosticWorkbenchProps> = ({
             className="v4-select"
             value={workbenchMode}
             onChange={(e) => {
-              const newMode = e.target.value as 'recreation' | 'painting';
+              const newMode = e.target.value as 'painting' | 'recreation';
               setWorkbenchMode(newMode);
               if (currentImgUrl) {
-                processImage(currentImgUrl, 'max', currentFileName);
+                processImage(currentImgUrl, 'max', currentFileName, newMode, selectedQuality);
               }
             }}
-            title="Engine Mode"
+            title="Rendering Mode"
           >
+            <option value="painting">Mode: Painting</option>
             <option value="recreation">Mode: Recreation</option>
-            <option value="painting">Mode: Painting Studio</option>
           </select>
 
-          {workbenchMode === 'recreation' && (
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-              <select
-                className="v4-select"
-                value={selectedTier}
-                onChange={(e) => handleTierSelect(e.target.value as any)}
-                title="Recreation Quality Tier"
-              >
-                <option value="tier1">High (Tier 1)</option>
-                <option value="tier2">Medium (Tier 2)</option>
-                <option value="tier3">Low (Tier 3)</option>
-                <option value="target">Target size mode</option>
-              </select>
-
-              {selectedTier === 'target' && (
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                  <input
-                    type="text"
-                    value={targetSizeInput}
-                    placeholder="e.g. 50 KB"
-                    onChange={(e) => setTargetSizeInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleApplyTargetSize();
-                    }}
-                    style={{
-                      width: '65px',
-                      padding: '2px 6px',
-                      fontSize: '11px',
-                      background: 'var(--panel-bg, #1a202c)',
-                      color: 'var(--text-main, #f7fafc)',
-                      border: '1px solid var(--border-soft, #4a5568)',
-                      borderRadius: '3px',
-                    }}
-                    title="Enter target size (e.g. 50 KB, 30 KB)"
-                  />
-                  <button
-                    className="v4-btn"
-                    style={{ padding: '2px 6px', fontSize: '11px' }}
-                    onClick={handleApplyTargetSize}
-                    title="Binary search parameters to hit target size"
-                  >
-                    Set
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
+          <select
+            className="v4-select"
+            value={selectedQuality}
+            onChange={(e) => {
+              const newQ = e.target.value as QualitySetting;
+              handleQualitySelect(newQ);
+            }}
+            title={workbenchMode === 'painting' ? 'Painting Quality: High or Low' : 'Recreation Quality: High or Low'}
+          >
+            <option value="high">Quality: High</option>
+            <option value="low">Quality: Low</option>
+          </select>
           <button style={{ display: 'none' }}>
           </button>
 
@@ -1213,7 +1145,7 @@ export const V4DiagnosticWorkbench: React.FC<V4DiagnosticWorkbenchProps> = ({
             disabled={isGenerating || !currentImgUrl}
             title={isGenerating ? generationStage : 'Paint vector portrait'}
           >
-            <span>{isGenerating ? 'Working…' : 'Paint it'}</span>
+            <span>{isGenerating ? 'Working…' : workbenchMode === 'recreation' ? 'Recreate it' : 'Paint it'}</span>
           </button>
         </div>
       </header>
@@ -1285,8 +1217,8 @@ export const V4DiagnosticWorkbench: React.FC<V4DiagnosticWorkbenchProps> = ({
               currentImgUrl={currentImgUrl}
               fileName={currentFileName}
               tiers={tiersData}
-              selectedTier={selectedTier}
-              onSelectTier={handleTierSelect}
+              selectedTier={selectedQuality}
+              onSelectTier={handleQualitySelect}
               mode={workbenchMode}
               svgBlobUrl={svgBlobUrl}
               lastGoodBlobUrl={lastGoodBlobUrl}
@@ -1341,6 +1273,7 @@ export const V4DiagnosticWorkbench: React.FC<V4DiagnosticWorkbenchProps> = ({
             }}
           >
             <V4Terminal
+              mode={workbenchMode}
               logs={logs}
               onClearLogs={() => setLogs([])}
               isGenerating={isGenerating}

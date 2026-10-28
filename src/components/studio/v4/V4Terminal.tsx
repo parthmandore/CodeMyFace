@@ -33,6 +33,7 @@ export interface V4TerminalProps {
   summaryData?: FinalSummaryData | null;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
+  mode?: 'painting' | 'recreation';
 }
 
 export const V4Terminal: React.FC<V4TerminalProps> = ({
@@ -46,6 +47,7 @@ export const V4Terminal: React.FC<V4TerminalProps> = ({
   summaryData,
   isCollapsed = false,
   onToggleCollapse,
+  mode = 'painting',
 }) => {
   const terminalBodyRef = useRef<HTMLDivElement | null>(null);
   const [autoScroll, setAutoScroll] = useState<boolean>(true);
@@ -136,7 +138,7 @@ export const V4Terminal: React.FC<V4TerminalProps> = ({
       <div className="v4-terminal-header">
         <div className="v4-terminal-title">
           <span className="v4-terminal-prompt">›</span>
-          <span className="v4-terminal-title-name">studio.log</span>
+          <span className="v4-terminal-title-name">{mode === 'recreation' ? 'recreation.log' : 'studio.log'}</span>
           {isGenerating ? (
             <span style={{ fontSize: '12px', color: 'var(--accent)' }}>
               Working... {elapsedSeconds.toFixed(1)} s
@@ -255,7 +257,7 @@ export const V4Terminal: React.FC<V4TerminalProps> = ({
         {summaryData && (
           <div className="atelier-summary-card">
             <div className="atelier-summary-header">
-              Studio Synthesis Record
+              {mode === 'recreation' ? 'Recreation Synthesis Record' : 'Studio Synthesis Record'}
             </div>
             <div className="atelier-summary-grid">
               <div className="atelier-summary-item">

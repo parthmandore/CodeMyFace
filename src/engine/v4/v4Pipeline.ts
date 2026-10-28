@@ -1,12 +1,11 @@
 /**
  * CodeMyFace V4 — Pipeline Orchestrator
  *
- * Runs all three V4 experiments in parallel/sequence:
- * - Candidate A: Region-Aware Vector Tracing
- * - Candidate B: Source-Guided Feature Reconstruction
- * - Candidate C: Hybrid Adaptive Vector Reconstruction
+ * Runs the simplified Two-Mode Pipeline:
+ * - Option A: Painting (Organic Painterly Vector Studio — zero synthetic stamps, zero blur)
+ * - Option B: Recreation (High-Fidelity Photographic Vector Reconstruction — zero downscale, zero holes)
  *
- * Derives color and geometry directly from the source image.
+ * Each mode generates two dedicated quality levels: High and Low.
  */
 
 import {
@@ -16,11 +15,10 @@ import {
   V4PipelineResult,
 } from './types';
 import { analyzePhotoColors } from './colorAnalysis';
-import { runExperimentA } from './experimentA/regionAwareTracer';
-import { runExperimentB } from './experimentB/sourceGuidedReconstruction';
-import { runExperimentC } from './experimentC/hybridReconstruction';
+import { runPaintingEngine } from './paintingEngine';
+import { runRecreationEngine } from './recreationEngine';
 import { NormalizedLandmark } from '../../services/faceDetection/types';
-import { optimizeSvgForTier, binarySearchTargetSize, AllTiersResult } from './tiers';
+import { AllTiersResult } from './tiers';
 
 export interface V4PipelineInput {
   image: HTMLImageElement | HTMLCanvasElement;
@@ -31,32 +29,29 @@ export interface V4PipelineInput {
 
 export async function runV4Pipeline(input: V4PipelineInput): Promise<V4PipelineResult> {
   const startTime = performance.now();
-  const { image, landmarks = [], categoryMask, options } = input;
+  const { image, landmarks, categoryMask, options } = input;
 
-  const width = (image as HTMLImageElement).naturalWidth || image.width || 600;
-  const height = (image as HTMLImageElement).naturalHeight || image.height || 800;
-
-  // 1. Prepare Canvas
+  // 1. Establish Uniform Canvas
   let canvas: HTMLCanvasElement;
-  if (typeof document !== 'undefined') {
-    canvas = document.createElement('canvas');
-  } else {
-    canvas = {
-      width,
-      height,
-      getContext: () => (image as any).getContext?.('2d'),
-    } as any;
-  }
-  canvas.width = width;
-  canvas.height = height;
+  let ctx: CanvasRenderingContext2D;
 
-  const ctx = canvas.getContext('2d')!;
-  if (typeof (image as any).getContext !== 'function') {
-    ctx.drawImage(image as HTMLImageElement, 0, 0, width, height);
+  if (typeof HTMLCanvasElement !== 'undefined' && image instanceof HTMLCanvasElement) {
+    canvas = image;
+    ctx = canvas.getContext('2d')!;
+  } else if (typeof document !== 'undefined') {
+    canvas = document.createElement('canvas');
+    canvas.width = (image as any).naturalWidth || (image as any).width || 800;
+    canvas.height = (image as any).naturalHeight || (image as any).height || 1000;
+    ctx = canvas.getContext('2d')!;
+    ctx.drawImage(image as any, 0, 0);
   } else {
-    // Already a canvas
-    ctx.drawImage(image as HTMLCanvasElement, 0, 0);
+    // Worker / node environment: duck-type fallback
+    canvas = image as any;
+    ctx = (image as any).getContext('2d');
   }
+
+  const width = canvas.width;
+  const height = canvas.height;
 
   // 2. Perform Empirical Color Analysis
   const colorPalette: ColorPaletteAnalysis = analyzePhotoColors(
@@ -67,128 +62,159 @@ export async function runV4Pipeline(input: V4PipelineInput): Promise<V4PipelineR
     categoryMask
   );
 
-  const mode = options?.mode;
+  const mode = options?.mode || 'painting';
 
-  // 3. Execute Candidate A (Region-Aware Vector Tracing)
-  const candidateA: V4CandidateResult = runExperimentA({
-    canvas,
-    width,
-    height,
-    colorPalette,
-    categoryMask,
-    landmarks,
-    options,
-  });
-
+  let candidateA: V4CandidateResult;
   let candidateB: V4CandidateResult;
   let candidateC: V4CandidateResult;
 
   let tiersResult: AllTiersResult | undefined = undefined;
 
+  // Resolve active quality: 'high' (default) vs 'low'
+  const activeQuality = (options?.quality || (options?.selectedTier === 'low' || options?.selectedTier === 'tier2' || options?.selectedTier === 'tier3' ? 'low' : 'high')) as 'high' | 'low';
+
   if (mode === 'recreation') {
-    // In 'recreation' mode: Candidate A only (no synthetic features, no backdrop, no skin blur)
-    // Tier 1: High Quality (full photographic resolution, 48 colors, 24 skin, 20 dark hair, pathomit 8)
-    const t1Opt = optimizeSvgForTier(candidateA.svgString, 'tier1', { landmarks, width, height });
-
-    // Tier 2: Medium Quality (~40-60% size, 24 colors, pathomit 24, safe compound merging)
-    const candA_tier2 = runExperimentA({
+    // =========================================================================
+    // OPTION B: HIGH-FIDELITY RECREATION ENGINE
+    // Maximum photographic vector fidelity, preserves stripes, lace, wire rims, zero holes
+    // =========================================================================
+    const recResults = runRecreationEngine({
       canvas,
       width,
       height,
       colorPalette,
-      categoryMask,
-      landmarks,
-      options: { ...options, detailPreset: 'medium', targetColors: 24, tracerPathOmit: 24 },
+      options,
     });
-    const t2Opt = optimizeSvgForTier(candA_tier2.svgString, 'tier2', { landmarks, width, height });
 
-    // Tier 3: Low Quality (~10-20% size, 12 colors, pathomit 56, saliency weighting, precision 0)
-    const candA_tier3 = runExperimentA({
-      canvas,
-      width,
-      height,
-      colorPalette,
-      categoryMask,
-      landmarks,
-      options: { ...options, detailPreset: 'low', targetColors: 12, tracerPathOmit: 56 },
-    });
-    const t3Opt = optimizeSvgForTier(candA_tier3.svgString, 'tier3', { landmarks, width, height });
+    const activeSvg = activeQuality === 'low' ? recResults.low.svgString : recResults.high.svgString;
+    const activePaths = activeQuality === 'low' ? recResults.low.pathCount : recResults.high.pathCount;
+    const activeBytes = activeQuality === 'low' ? recResults.low.rawBytes : recResults.high.rawBytes;
+    const activeTime = activeQuality === 'low' ? recResults.low.executionTimeMs : recResults.high.executionTimeMs;
 
-    const selectedTierId = options?.selectedTier || 'tier1';
-    let activeSvg = t1Opt.svg;
-    if (selectedTierId === 'tier2') activeSvg = t2Opt.svg;
-    if (selectedTierId === 'tier3') activeSvg = t3Opt.svg;
-
-    if (options?.targetSizeKb && options.targetSizeKb > 0) {
-      const targetRes = binarySearchTargetSize(candidateA.svgString, options.targetSizeKb * 1024, { landmarks, width, height });
-      activeSvg = targetRes.svgString;
-    }
-
-    candidateA.svgString = activeSvg;
+    candidateA = {
+      candidateId: 'candidate-a',
+      name: 'Recreation',
+      title: 'High-Fidelity Photographic Vector Recreation',
+      description: 'Faithful photographic vector reconstruction with multi-scale architecture, zero holes, and razor-sharp contour fidelity.',
+      svgString: activeSvg,
+      metrics: {
+        pathCount: activePaths,
+        nodeCount: activePaths * 4,
+        fileSizeKb: Math.round((activeBytes / 1024) * 10) / 10,
+        executionTimeMs: activeTime,
+      },
+    };
     candidateB = candidateA;
     candidateC = candidateA;
 
+    const highResult = {
+      quality: 'high' as const,
+      svgString: recResults.high.svgString,
+      rawBytes: recResults.high.rawBytes,
+      gzipBytes: recResults.high.gzipBytes,
+      pathCount: recResults.high.pathCount,
+      nodeCount: recResults.high.pathCount * 4,
+      ssim: 0,
+      psnr: 0,
+      colorError: 0,
+      executionTimeMs: recResults.high.executionTimeMs,
+    };
+
+    const lowResult = {
+      quality: 'low' as const,
+      svgString: recResults.low.svgString,
+      rawBytes: recResults.low.rawBytes,
+      gzipBytes: recResults.low.gzipBytes,
+      pathCount: recResults.low.pathCount,
+      nodeCount: recResults.low.pathCount * 4,
+      ssim: 0,
+      psnr: 0,
+      colorError: 0,
+      executionTimeMs: recResults.low.executionTimeMs,
+    };
+
     tiersResult = {
-      tier1: {
-        tier: 'tier1',
-        svgString: t1Opt.svg,
-        rawBytes: t1Opt.rawBytes,
-        gzipBytes: t1Opt.gzipBytes,
-        pathCount: t1Opt.pathCount,
-        nodeCount: t1Opt.pathCount * 4,
-        ssim: 0,
-        psnr: 0,
-        colorError: 0,
-        executionTimeMs: Math.round(performance.now() - startTime),
-      },
-      tier2: {
-        tier: 'tier2',
-        svgString: t2Opt.svg,
-        rawBytes: t2Opt.rawBytes,
-        gzipBytes: t2Opt.gzipBytes,
-        pathCount: t2Opt.pathCount,
-        nodeCount: t2Opt.pathCount * 4,
-        ssim: 0,
-        psnr: 0,
-        colorError: 0,
-        executionTimeMs: Math.round(performance.now() - startTime),
-      },
-      tier3: {
-        tier: 'tier3',
-        svgString: t3Opt.svg,
-        rawBytes: t3Opt.rawBytes,
-        gzipBytes: t3Opt.gzipBytes,
-        pathCount: t3Opt.pathCount,
-        nodeCount: t3Opt.pathCount * 4,
-        ssim: 0,
-        psnr: 0,
-        colorError: 0,
-        executionTimeMs: Math.round(performance.now() - startTime),
-      },
-      selectedTier: selectedTierId,
+      high: highResult,
+      low: lowResult,
+      selectedQuality: activeQuality,
+      // Compatibility aliases
+      tier1: highResult,
+      tier2: lowResult,
+      tier3: lowResult,
+      selectedTier: activeQuality,
     };
   } else {
-    // 4. Execute Candidate B (Source-Guided Feature Reconstruction)
-    candidateB = runExperimentB({
-      width,
-      height,
-      landmarks,
-      colorPalette,
-      categoryMask,
-      options,
-    });
-
-    // 5. Execute Candidate C (Hybrid Adaptive Reconstruction)
-    candidateC = runExperimentC({
+    // =========================================================================
+    // OPTION A: ORGANIC PAINTING STUDIO ENGINE
+    // Cohesive planar vector art, zero synthetic stamps, zero blur, authentic likeness
+    // =========================================================================
+    const paintResults = runPaintingEngine({
       canvas,
       width,
       height,
-      landmarks,
       colorPalette,
-      baseSvg: candidateA.svgString,
       categoryMask,
+      landmarks,
       options,
     });
+
+    const activeSvg = activeQuality === 'low' ? paintResults.low.svgString : paintResults.high.svgString;
+    const activePaths = activeQuality === 'low' ? paintResults.low.pathCount : paintResults.high.pathCount;
+    const activeBytes = activeQuality === 'low' ? paintResults.low.rawBytes : paintResults.high.rawBytes;
+    const activeTime = activeQuality === 'low' ? paintResults.low.executionTimeMs : paintResults.high.executionTimeMs;
+
+    candidateC = {
+      candidateId: 'candidate-c',
+      name: 'Painting Studio',
+      title: 'Organic Digital Painting',
+      description: 'Authentic painterly vector portrait with organic planar modeling. Zero synthetic stamps, zero blur.',
+      svgString: activeSvg,
+      metrics: {
+        pathCount: activePaths,
+        nodeCount: activePaths * 4,
+        fileSizeKb: Math.round((activeBytes / 1024) * 10) / 10,
+        executionTimeMs: activeTime,
+      },
+    };
+    candidateA = candidateC;
+    candidateB = candidateC;
+
+    const highResult = {
+      quality: 'high' as const,
+      svgString: paintResults.high.svgString,
+      rawBytes: paintResults.high.rawBytes,
+      gzipBytes: paintResults.high.gzipBytes,
+      pathCount: paintResults.high.pathCount,
+      nodeCount: paintResults.high.pathCount * 4,
+      ssim: 0,
+      psnr: 0,
+      colorError: 0,
+      executionTimeMs: paintResults.high.executionTimeMs,
+    };
+
+    const lowResult = {
+      quality: 'low' as const,
+      svgString: paintResults.low.svgString,
+      rawBytes: paintResults.low.rawBytes,
+      gzipBytes: paintResults.low.gzipBytes,
+      pathCount: paintResults.low.pathCount,
+      nodeCount: paintResults.low.pathCount * 4,
+      ssim: 0,
+      psnr: 0,
+      colorError: 0,
+      executionTimeMs: paintResults.low.executionTimeMs,
+    };
+
+    tiersResult = {
+      high: highResult,
+      low: lowResult,
+      selectedQuality: activeQuality,
+      // Compatibility aliases
+      tier1: highResult,
+      tier2: lowResult,
+      tier3: lowResult,
+      selectedTier: activeQuality,
+    };
   }
 
   const executionTimeMs = Math.round(performance.now() - startTime);

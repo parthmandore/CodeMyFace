@@ -25,9 +25,7 @@ if (typeof self !== 'undefined') {
 import ImageTracerModule from 'imagetracerjs';
 import { runV4Pipeline } from '../engine/v4/v4Pipeline';
 import { applyFastBlur } from '../engine/v4/experimentA/regionAwareTracer';
-import { optimizeSvgDocument, extractPaintingLayers, mergePathsIntoColorLayers } from '../engine/v4/svgOptimizer';
-import { minifySvgDocument } from '../engine/v4/sizeOptimizer/svgMinifier';
-import flags from '../flags';
+import { extractPaintingLayers, mergePathsIntoColorLayers } from '../engine/v4/svgOptimizer';
 import type { V4ExperimentOptions } from '../engine/v4/types';
 import type { NormalizedLandmark } from '../services/faceDetection/types';
 
@@ -139,18 +137,10 @@ self.onmessage = async (e: MessageEvent) => {
       });
 
       // Clean SVG output (Candidate A in 'recreation' mode, Candidate C in 'painting' mode)
-      const isRecreation = options?.mode !== 'painting';
-      let finalSvg = isRecreation
+      const isRecreation = options?.mode === 'recreation';
+      const finalSvg = isRecreation
         ? pipelineResult.candidates['candidate-a'].svgString
         : pipelineResult.candidates['candidate-c'].svgString;
-
-      if (!isRecreation) {
-        const mergedSvg = optimizeSvgDocument(finalSvg);
-        finalSvg = flags.sizeOptimizer
-          ? minifySvgDocument(mergedSvg, { preset: 'balanced' })
-          : mergedSvg;
-        pipelineResult.candidates['candidate-c'].svgString = finalSvg;
-      }
 
       // Extract all final painting layers in sequential stacking order (1x coordinate space for canvas)
       const allPaintingLayers = extractPaintingLayers(finalSvg);
