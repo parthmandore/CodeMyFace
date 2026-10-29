@@ -1,101 +1,138 @@
 /* ==========================================================================
-   CodeMyFace Design Tokens
-   Creative Coding Studio Aesthetic (Dark slate, cyber violet, radiant cyan)
+   CodeMyPicture Design Tokens — Unified Atelier Studio Design System
+   Concept: High-end creative coding IDE & professional vision laboratory
+   Honest craft, typographic precision, deep charcoal surfaces, hairline borders
    ========================================================================== */
 
+@property --accent {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #FF4F2E;
+}
+
 :root {
-  /* Color Palette - Neutrals */
-  --bg-app: #090b0e;
-  --bg-surface-1: #11141a;
-  --bg-surface-2: #171b23;
-  --bg-surface-3: #1f242f;
-  --bg-surface-hover: #262c39;
-  --bg-surface-active: #2e3545;
+  /* Atelier Core Tokens */
+  --ink: #14110F;        /* Deep charcoal app background */
+  --ink-2: #1C1815;      /* Primary panels and card surfaces */
+  --ink-3: #26211D;      /* Raised surfaces / hover states */
+  --ink-4: #312A25;      /* Active / pressed states */
+  --line: #3A332D;       /* 1px hairline structural borders */
+  --line-subtle: #2A241F;/* Secondary subtle hairline dividers */
+  --line-strong: #4F453D;/* Focused / emphasized borders */
 
-  /* Borders & Dividers */
-  --border-subtle: #1e2430;
-  --border-default: #2a3344;
-  --border-strong: #3b465c;
-  --border-focus: #7c3aed;
+  /* Atelier Typography Colors */
+  --paper: #ECE5D6;      /* Main text (warm parchment, high contrast) */
+  --paper-dim: #A59C8C;  /* Secondary / technical metadata text */
+  --paper-muted: #736B5E;/* Muted labels / line numbers */
+  --paper-inverse: #14110F;
 
-  /* Typography Colors */
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-tertiary: #64748b;
-  --text-muted: #475569;
-  --text-inverse: #090b0e;
+  /* Studio Brand & Restrained Accent Colors */
+  --vermilion: #FF4F2E;  /* Primary studio accent */
+  --moss: #9DB48A;       /* Verified / metrics / success */
+  --amber: #E2A03F;      /* Warning / processing */
+  --rose: #E05252;       /* Error / alert */
 
-  /* Studio Brand & Accent Colors */
-  --accent-primary: #8b5cf6;
-  --accent-primary-hover: #7c3aed;
-  --accent-primary-light: rgba(139, 92, 246, 0.12);
-  --accent-secondary: #06b6d4;
-  --accent-secondary-hover: #0891b2;
-  --accent-secondary-light: rgba(6, 182, 212, 0.12);
-  
-  /* Status Colors */
-  --status-success: #10b981;
-  --status-success-bg: rgba(16, 185, 129, 0.12);
-  --status-success-border: rgba(16, 185, 129, 0.3);
+  --accent: var(--vermilion);
+  --accent-rgb: 255, 79, 46;
 
-  --status-warning: #f59e0b;
-  --status-warning-bg: rgba(245, 158, 11, 0.12);
-  --status-warning-border: rgba(245, 158, 11, 0.3);
+  /* Semantic Aliases for Studio Components */
+  --bg-app: var(--ink);
+  --bg-surface-1: var(--ink-2);
+  --bg-surface-2: var(--ink-3);
+  --bg-surface-3: var(--ink-4);
+  --bg-surface-hover: var(--ink-3);
+  --bg-surface-active: var(--ink-4);
 
-  --status-error: #f43f5e;
-  --status-error-bg: rgba(244, 63, 94, 0.12);
-  --status-error-border: rgba(244, 63, 94, 0.3);
+  --border-subtle: var(--line-subtle);
+  --border-default: var(--line);
+  --border-strong: var(--line-strong);
+  --border-focus: var(--accent);
 
-  --status-info: #3b82f6;
-  --status-info-bg: rgba(59, 130, 246, 0.12);
-  --status-info-border: rgba(59, 130, 246, 0.3);
+  --text-primary: var(--paper);
+  --text-secondary: var(--paper-dim);
+  --text-tertiary: var(--paper-muted);
+  --text-muted: var(--paper-muted);
+  --text-inverse: var(--paper-inverse);
+
+  --accent-primary: var(--vermilion);
+  --accent-primary-hover: #E03E1E;
+  --accent-primary-light: rgba(255, 79, 46, 0.12);
+  --accent-secondary: var(--moss);
+  --accent-secondary-hover: #8EA47C;
+  --accent-secondary-light: rgba(157, 180, 138, 0.12);
+
+  --status-success: var(--moss);
+  --status-success-bg: rgba(157, 180, 138, 0.12);
+  --status-success-border: rgba(157, 180, 138, 0.3);
+
+  --status-warning: var(--amber);
+  --status-warning-bg: rgba(226, 160, 63, 0.12);
+  --status-warning-border: rgba(226, 160, 63, 0.3);
+
+  --status-error: var(--rose);
+  --status-error-bg: rgba(224, 82, 82, 0.12);
+  --status-error-border: rgba(224, 82, 82, 0.3);
+
+  --status-info: var(--moss);
+  --status-info-bg: rgba(157, 180, 138, 0.1);
+  --status-info-border: rgba(157, 180, 138, 0.25);
 
   /* Typography */
-  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-serif: 'Instrument Serif', Georgia, 'Times New Roman', serif;
+  --font-sans: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
-  --text-xs: 0.75rem;     /* 12px */
-  --text-sm: 0.875rem;    /* 14px */
-  --text-base: 1rem;       /* 16px */
-  --text-lg: 1.125rem;    /* 18px */
-  --text-xl: 1.25rem;     /* 20px */
-  --text-2xl: 1.5rem;     /* 24px */
-  --text-3xl: 1.875rem;   /* 30px */
-  --text-4xl: 2.25rem;    /* 36px */
+  /* Atelier Type Scale */
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-base: 13px;
+  --text-md: 14px;
+  --text-lg: 16px;
+  --text-xl: 18px;
+  --text-2xl: 22px;
+  --text-3xl: 28px;
+  --text-4xl: 36px;
 
-  /* Spacing */
-  --space-1: 0.25rem;  /* 4px */
-  --space-2: 0.5rem;   /* 8px */
-  --space-3: 0.75rem;  /* 12px */
-  --space-4: 1rem;     /* 16px */
-  --space-5: 1.25rem;  /* 20px */
-  --space-6: 1.5rem;   /* 24px */
-  --space-8: 2rem;     /* 32px */
-  --space-10: 2.5rem;  /* 40px */
-  --space-12: 3rem;    /* 48px */
-  --space-16: 4rem;    /* 64px */
+  --text-1: 13px;
+  --text-2: 15px;
+  --text-3: 18px;
+  --text-4: 28px;
 
-  /* Border Radii */
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
-  --radius-2xl: 24px;
+  /* Atelier Spacing Scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Precise Corner Radii (Crisp, technical, non-bubble) */
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 4px;
+  --radius-xl: 6px;
+  --radius-2xl: 8px;
   --radius-full: 9999px;
 
-  /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 10px 28px rgba(0, 0, 0, 0.5);
-  --shadow-glow: 0 0 24px rgba(139, 92, 246, 0.25);
-  --shadow-glow-cyan: 0 0 24px rgba(6, 182, 212, 0.25);
+  /* Restrained Shadows (Subtle depth, zero neon blur) */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6);
+  --shadow-glow: none;
+  --shadow-glow-cyan: none;
 
-  /* Transitions */
-  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+  /* Precision Transitions */
+  --transition-fast: 120ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-normal: 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-slow: 300ms cubic-bezier(0.16, 1, 0.3, 1);
 
   /* Layout */
-  --max-width-content: 1280px;
-  --header-height: 64px;
+  --max-width-content: 1160px;
+  --header-height: 44px;
+
+  color-scheme: dark;
 }

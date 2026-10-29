@@ -1,5 +1,5 @@
 import React from 'react';
-import { Camera, Shapes, Terminal, Check } from 'lucide-react';
+import { Camera, Eye, Code, Check } from 'lucide-react';
 
 export interface StepIndicatorProps {
   hasImage: boolean;
@@ -17,47 +17,47 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({
   const isStudio = currentView === 'studio';
 
   return (
-    <div className="stepper-bar">
-      {/* Step 1 */}
-      <div className={`stepper-item ${hasImage ? 'is-complete' : 'is-active'}`}>
-        <div className="stepper-item__marker">
-          {hasImage ? <Check size={14} /> : <Camera size={14} />}
-        </div>
-        <div className="stepper-item__content">
-          <span className="stepper-item__tag mono">STEP 1</span>
-          <span className="stepper-item__title">
-            {hasImage ? (faceDetected ? 'Face Landmark Ready' : 'Photo Calibrated') : 'Photo & Face Input'}
+    <div className="studio-stepper-hud mono" aria-label="Pipeline Stages">
+      <div className="studio-stepper-hud__inner">
+        {/* Step 1: Input */}
+        <div className={`stepper-hud-item ${hasImage ? 'is-complete' : 'is-active'}`}>
+          <span className="stepper-hud-marker">
+            {hasImage ? <Check size={11} /> : <Camera size={11} />}
+          </span>
+          <span className="stepper-hud-tag">01 // INPUT</span>
+          <span className="stepper-hud-label">
+            {hasImage ? 'Photo Ingested' : 'Ingest Photograph'}
           </span>
         </div>
-      </div>
 
-      <div className="stepper-divider" />
+        <span className="stepper-hud-divider" aria-hidden="true">→</span>
 
-      {/* Step 2 */}
-      <div className={`stepper-item ${isStudio || portraitGenerated ? 'is-complete' : hasImage ? 'is-active' : 'is-future'}`}>
-        <div className="stepper-item__marker">
-          {isStudio || portraitGenerated ? <Check size={14} /> : <Shapes size={14} />}
-        </div>
-        <div className="stepper-item__content">
-          <span className="stepper-item__tag mono">STEP 2</span>
-          <span className="stepper-item__title">
-            {portraitGenerated ? 'Face Likeness Analyzed' : 'Geometric Landmark Analysis'}
+        {/* Step 2: Calibration */}
+        <div className={`stepper-hud-item ${isStudio || portraitGenerated ? 'is-complete' : hasImage ? 'is-active' : 'is-pending'}`}>
+          <span className="stepper-hud-marker">
+            {isStudio || portraitGenerated ? <Check size={11} /> : <Eye size={11} />}
+          </span>
+          <span className="stepper-hud-tag">02 // CALIBRATION</span>
+          <span className="stepper-hud-label">
+            {hasImage ? (faceDetected ? 'Face & Geometry Calibrated' : 'Scene Geometry Calibrated') : 'Geometry & Tone Mesh'}
           </span>
         </div>
-      </div>
 
-      <div className="stepper-divider" />
+        <span className="stepper-hud-divider" aria-hidden="true">→</span>
 
-      {/* Step 3 */}
-      <div className={`stepper-item ${portraitGenerated && !isStudio ? 'is-complete' : isStudio ? 'is-active' : 'is-future'}`}>
-        <div className="stepper-item__marker">
-          {portraitGenerated ? <Check size={14} /> : <Terminal size={14} />}
-        </div>
-        <div className="stepper-item__content">
-          <span className="stepper-item__tag mono">STEP 3 (ACTIVE)</span>
-          <span className="stepper-item__title">Staged Vector Synthesis & Live SVG Code</span>
+        {/* Step 3: Synthesis */}
+        <div className={`stepper-hud-item ${isStudio ? 'is-active' : 'is-pending'}`}>
+          <span className="stepper-hud-marker">
+            <Code size={11} />
+          </span>
+          <span className="stepper-hud-tag">03 // SYNTHESIS</span>
+          <span className="stepper-hud-label">
+            {isStudio ? 'Workbench Live' : 'Vector IDE & Output'}
+          </span>
         </div>
       </div>
     </div>
   );
 };
+
+export default StepIndicator;

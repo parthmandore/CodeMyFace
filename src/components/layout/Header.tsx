@@ -1,6 +1,5 @@
 import React from 'react';
-import { Cpu, ShieldCheck, Layers, Sparkles } from 'lucide-react';
-import { StatusPill, StatusPillVariant } from '../common/StatusPill';
+import { ShieldCheck, Cpu, ArrowRight, Layers, Terminal } from 'lucide-react';
 import { FaceDetectionState } from '../../services/faceDetection/types';
 
 export interface HeaderProps {
@@ -14,123 +13,114 @@ export interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({
   currentView,
   onViewChange,
-  hasValidImage: _hasValidImage,
+  hasValidImage,
   engineState,
   onInitEngine,
 }) => {
   // Determine engine badge status
-  let engineVariant: StatusPillVariant = 'neutral';
-  let engineLabel = 'Engine: Offline';
+  let engineLabel = 'WASM: Offline';
+  let engineColor = 'var(--paper-dim)';
 
   if (engineState === 'ready') {
-    engineVariant = 'success';
-    engineLabel = 'MediaPipe Ready';
+    engineLabel = 'WASM: Ready';
+    engineColor = 'var(--moss)';
   } else if (engineState === 'initializing' || engineState === 'detecting') {
-    engineVariant = 'warning';
-    engineLabel = engineState === 'detecting' ? 'Analyzing Face...' : 'Loading WASM...';
+    engineLabel = engineState === 'detecting' ? 'Analyzing Face…' : 'Loading WASM…';
+    engineColor = 'var(--amber)';
   } else if (engineState === 'error') {
-    engineVariant = 'error';
-    engineLabel = 'Engine Error';
+    engineLabel = 'WASM: Error';
+    engineColor = 'var(--rose)';
   } else if (engineState === 'uninitialized') {
-    engineVariant = 'neutral';
-    engineLabel = 'MediaPipe Idle';
+    engineLabel = 'WASM: Standby';
+    engineColor = 'var(--paper-dim)';
   }
 
   return (
-    <header className="studio-header">
-      <div className="studio-header__left">
-        <div className="brand-logo" onClick={() => onViewChange('upload')} role="button" tabIndex={0}>
-          <div className="brand-logo__glyph">
-            {/* Geometric SVG Face Icon */}
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              aria-hidden="true"
-            >
-              <polygon
-                points="12,2 21,7 21,17 12,22 3,17 3,7"
-                stroke="currentColor"
-                strokeWidth="1.75"
-                strokeLinejoin="round"
-                className="glyph-hexagon"
-              />
-              <polyline
-                points="12,2 12,12 21,17"
-                stroke="currentColor"
-                strokeWidth="1.25"
-                opacity="0.8"
-              />
-              <polyline
-                points="12,12 3,17"
-                stroke="currentColor"
-                strokeWidth="1.25"
-                opacity="0.8"
-              />
-              <polyline
-                points="7.5,9.5 12,12 16.5,9.5"
-                stroke="var(--accent-secondary)"
-                strokeWidth="1.5"
-              />
-              <circle cx="9" cy="8" r="1.2" fill="var(--accent-secondary)" />
-              <circle cx="15" cy="8" r="1.2" fill="var(--accent-secondary)" />
-              <circle cx="12" cy="14" r="1.2" fill="var(--accent-primary)" />
-            </svg>
-          </div>
-          <div className="brand-logo__text">
-            <span className="brand-logo__name">
-              Code<span className="accent-gradient">MyPicture</span>
-            </span>
-            <span className="brand-logo__badge mono">V4 WORKBENCH</span>
-          </div>
+    <header className="v4-header studio-header-unified" role="banner">
+      <div className="v4-header__left">
+        <div
+          className="v4-wordmark"
+          onClick={() => onViewChange('upload')}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onViewChange('upload');
+            }
+          }}
+          title="CodeMyPicture — Return to Photo Input"
+        >
+          CodeMy<em className="v4-wordmark-face">Picture</em>
         </div>
-      </div>
 
-      <div className="studio-header__center">
-        <nav className="studio-nav" aria-label="Workflow Navigation">
+        <nav className="studio-header-nav" aria-label="Workbench Navigation">
           <button
             type="button"
-            className={`studio-nav__item ${currentView === 'upload' ? 'is-active' : ''}`}
+            className={`v4-btn ${currentView === 'upload' ? 'is-active' : ''}`}
             onClick={() => onViewChange('upload')}
+            aria-current={currentView === 'upload' ? 'page' : undefined}
           >
-            <Layers size={16} />
-            <span>Photo Upload</span>
+            <Layers size={13} style={{ marginRight: '4px', opacity: 0.7 }} />
+            <span>01 // Input</span>
           </button>
+
           <button
             type="button"
-            className={`studio-nav__item ${currentView === 'studio' ? 'is-active' : ''}`}
+            className={`v4-btn ${currentView === 'studio' ? 'is-active' : ''}`}
             onClick={() => onViewChange('studio')}
-            title="Open Studio Workbench"
+            disabled={!hasValidImage}
+            title={hasValidImage ? 'Open Studio Workbench' : 'Upload an image first to open the workbench'}
+            aria-current={currentView === 'studio' ? 'page' : undefined}
           >
-            <Sparkles size={16} color="var(--accent-primary, #FF4F2E)" />
-            <span>Studio Workbench</span>
+            <Terminal size={13} style={{ marginRight: '4px', opacity: 0.7 }} />
+            <span>02 // Workbench</span>
           </button>
         </nav>
       </div>
 
-      <div className="studio-header__right">
+      <div className="v4-header__right">
         {/* Local Privacy Guarantee */}
-        <div className="privacy-pill" title="All processing occurs strictly inside your browser memory. No photos are ever uploaded.">
-          <ShieldCheck size={14} className="privacy-pill__icon" />
-          <span className="privacy-pill__text">100% Client-Side</span>
+        <div
+          className="studio-header-status-badge mono"
+          title="All processing occurs strictly inside your browser memory via WebAssembly and Web Workers. No photos are ever uploaded."
+        >
+          <ShieldCheck size={13} style={{ color: 'var(--moss)' }} />
+          <span>100% Client-Side</span>
         </div>
 
-        {/* MediaPipe Engine Status Indicator */}
+        {/* Engine Status */}
         <div
-          className="engine-status-container"
+          className="studio-header-status-badge mono"
           onClick={engineState === 'uninitialized' || engineState === 'error' ? onInitEngine : undefined}
           style={{ cursor: engineState === 'uninitialized' || engineState === 'error' ? 'pointer' : 'default' }}
-          title={engineState === 'error' ? 'Click to retry engine initialization' : 'MediaPipe Face Landmarker status'}
+          title={engineState === 'error' ? 'Click to retry engine initialization' : 'MediaPipe Vision WASM status'}
         >
-          <StatusPill
-            label={engineLabel}
-            variant={engineVariant}
-            icon={<Cpu size={13} />}
-            pulse={engineState === 'initializing' || engineState === 'detecting'}
+          <span
+            style={{
+              display: 'inline-block',
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              backgroundColor: engineColor,
+            }}
           />
+          <Cpu size={12} style={{ color: engineColor }} />
+          <span style={{ color: engineColor }}>{engineLabel}</span>
         </div>
+
+        {/* Quick Launch CTA when photo is loaded */}
+        {hasValidImage && currentView === 'upload' && (
+          <button
+            type="button"
+            className="v4-btn v4-btn--accent"
+            onClick={() => onViewChange('studio')}
+            title="Open Studio Workbench"
+          >
+            <span>Open Workbench</span>
+            <ArrowRight size={13} style={{ marginLeft: '4px' }} />
+          </button>
+        )}
       </div>
     </header>
   );

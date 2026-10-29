@@ -1,5 +1,5 @@
 import React, { useRef, useState, useCallback } from 'react';
-import { UploadCloud, Image as ImageIcon, Sparkles } from 'lucide-react';
+import { Upload, Image as ImageIcon, Sparkles, CheckCircle2 } from 'lucide-react';
 import { formatBytes } from '../../utils/formatters';
 import { DEFAULT_MAX_FILE_SIZE_BYTES } from '../../utils/imageValidator';
 
@@ -32,7 +32,6 @@ export const Dropzone: React.FC<DropzoneProps> = ({
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    // Only deactivate if leaving target entirely
     if (e.currentTarget.contains(e.relatedTarget as Node)) return;
     setIsDragOver(false);
   }, []);
@@ -70,13 +69,12 @@ export const Dropzone: React.FC<DropzoneProps> = ({
     if (files && files.length > 0) {
       onFileSelected(files[0]);
     }
-    // Reset file input value so selecting the same file again triggers change
     e.target.value = '';
   };
 
   return (
     <div
-      className={`studio-dropzone ${isDragOver ? 'is-drag-over' : ''} ${isValidating ? 'is-validating' : ''}`}
+      className={`studio-dropzone-chamber ${isDragOver ? 'is-drag-over' : ''} ${isValidating ? 'is-validating' : ''}`}
       onDragEnter={handleDragEnter}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -85,7 +83,7 @@ export const Dropzone: React.FC<DropzoneProps> = ({
       onKeyDown={handleKeyDown}
       tabIndex={0}
       role="button"
-      aria-label="Upload photo area. Drag and drop a photo or click to browse files"
+      aria-label="Upload photo area. Drag and drop a photograph or click to browse files"
     >
       <input
         ref={fileInputRef}
@@ -97,60 +95,63 @@ export const Dropzone: React.FC<DropzoneProps> = ({
         disabled={isValidating}
       />
 
-      <div className="studio-dropzone__glow" aria-hidden="true" />
-
-      <div className="studio-dropzone__content">
-        <div className="studio-dropzone__icon-wrapper">
+      <div className="dropzone-chamber__content">
+        <div className="dropzone-chamber__icon-box">
           {isValidating ? (
-            <div className="studio-dropzone__spinner" />
+            <div className="dropzone-chamber__spinner" aria-hidden="true" />
           ) : isDragOver ? (
-            <UploadCloud size={36} className="studio-dropzone__icon pulse-scale" />
+            <Upload size={30} style={{ color: 'var(--accent)' }} />
           ) : (
-            <ImageIcon size={36} className="studio-dropzone__icon" />
+            <ImageIcon size={30} style={{ color: 'var(--paper-dim)' }} />
           )}
         </div>
 
-        <div className="studio-dropzone__text-group">
-          <h3 className="studio-dropzone__heading">
+        <div className="dropzone-chamber__text-group">
+          <h2 className="dropzone-chamber__heading">
             {isValidating
-              ? 'Verifying and decoding photo...'
+              ? 'Verifying and calibrating image buffer…'
               : isDragOver
-              ? 'Drop your selfie here'
-              : 'Choose a selfie or drop it here'}
-          </h3>
-          <p className="studio-dropzone__subheading">
-            Drag and drop or tap to browse your local device files
+              ? 'Release to ingest photograph'
+              : 'Drop a photograph here, or browse files'}
+          </h2>
+          <p className="dropzone-chamber__subheading">
+            Drag and drop anywhere, or select an image from your local drive
           </p>
         </div>
 
-        <div className="studio-dropzone__specs-badge mono">
-          <span className="spec-item">JPEG · PNG · WebP</span>
-          <span className="spec-dot">•</span>
-          <span className="spec-item">Up to {formatBytes(maxSizeBytes)}</span>
-          <span className="spec-dot">•</span>
-          <span className="spec-item">Processed strictly in-memory</span>
+        <div className="dropzone-chamber__specs mono">
+          <span className="spec-item">FORMATS: JPEG · PNG · WebP</span>
+          <span className="spec-sep" aria-hidden="true">|</span>
+          <span className="spec-item">LIMIT: {formatBytes(maxSizeBytes)}</span>
+          <span className="spec-sep" aria-hidden="true">|</span>
+          <span className="spec-item" style={{ color: 'var(--moss)' }}>
+            <CheckCircle2 size={11} style={{ display: 'inline', marginRight: '4px' }} />
+            IN-MEMORY ONLY
+          </span>
         </div>
 
         <button
           type="button"
-          className="studio-btn studio-btn--secondary studio-btn--md studio-dropzone__button"
+          className="v4-btn dropzone-chamber__action-btn"
           onClick={(e) => {
             e.stopPropagation();
             handleClick();
           }}
           disabled={isValidating}
         >
-          <UploadCloud size={16} />
-          <span>Browse File</span>
+          <Upload size={13} style={{ marginRight: '6px' }} />
+          <span>Select Photograph</span>
         </button>
       </div>
 
-      <div className="studio-dropzone__tips">
-        <div className="dropzone-tip">
-          <Sparkles size={14} className="dropzone-tip__icon" />
-          <span>Best results: Single face, forward-facing angle, and good lighting</span>
+      <div className="dropzone-chamber__footer mono">
+        <div className="dropzone-chamber__tip">
+          <Sparkles size={12} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+          <span>Recommendation: Forward-facing portraits, figures, or compositions with balanced contrast yield optimal vector contour tracking.</span>
         </div>
       </div>
     </div>
   );
 };
+
+export default Dropzone;

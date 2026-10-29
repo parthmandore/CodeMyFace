@@ -6,11 +6,13 @@ import { SegmentationService } from './services/segmentation/segmentationService
 import { Header } from './components/layout/Header';
 import { StepIndicator } from './components/studio/StepIndicator';
 import { UploadWorkflow } from './components/upload/UploadWorkflow';
+import { Footer } from './components/layout/Footer';
 import { V4DiagnosticWorkbench } from './components/studio/V4DiagnosticWorkbench';
 import { safeRevokeObjectURL } from './utils/imageLoader';
 import './styles/tokens.css';
 import './styles/base.css';
 import './styles/components.css';
+import './styles/v4workbench.css';
 
 export const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<'upload' | 'studio'>('upload');
@@ -78,9 +80,9 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="codemyface-app">
+    <div className="codemypicture-app codemyface-app">
       {currentView === 'upload' && (
-        <>
+        <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
           <Header
             currentView={currentView}
             onViewChange={handleViewChange}
@@ -93,7 +95,7 @@ export const App: React.FC = () => {
             portraitGenerated={false}
             currentView={currentView}
           />
-          <main className="studio-main-content">
+          <main className="studio-main-content" style={{ flex: 1 }}>
             <div className="studio-page-container">
               <UploadWorkflow
                 currentImage={currentImage}
@@ -103,7 +105,8 @@ export const App: React.FC = () => {
               />
             </div>
           </main>
-        </>
+          <Footer />
+        </div>
       )}
 
       {currentView === 'studio' && (

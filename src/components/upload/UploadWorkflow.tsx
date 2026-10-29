@@ -5,9 +5,13 @@ import { loadImageFromFile, safeRevokeObjectURL } from '../../utils/imageLoader'
 import { Dropzone } from './Dropzone';
 import { PhotoPreview } from './PhotoPreview';
 import { ErrorAlert } from '../common/ErrorAlert';
-import { Sparkles, Code2, ShieldAlert } from 'lucide-react';
-
 import { FaceDetectionResult } from '../../services/faceDetection/types';
+import { ModeComparisonSection } from '../landing/ModeComparisonSection';
+import { WorkflowSection } from '../landing/WorkflowSection';
+import { TechnicalFeaturesSection } from '../landing/TechnicalFeaturesSection';
+import { LocalPrivacySection } from '../landing/LocalPrivacySection';
+import { ExportFormatsSection } from '../landing/ExportFormatsSection';
+import { DiagnosticsInfoSection } from '../landing/DiagnosticsInfoSection';
 
 export interface UploadWorkflowProps {
   currentImage: ValidatedImage | null;
@@ -106,27 +110,27 @@ export const UploadWorkflow: React.FC<UploadWorkflowProps> = ({
         aria-hidden="true"
       />
 
-      {/* Intro hero header explaining photo-to-vector recreation */}
+      {/* 1. Hero Header matching Studio Workbench Visual Language */}
       {!currentImage && (
         <div className="studio-hero">
-          <div
-            className="studio-hero__badge mono"
-            style={{
-              borderColor: 'rgba(255, 79, 46, 0.4)',
-              background: 'rgba(255, 79, 46, 0.1)',
-              color: '#FF4F2E',
-            }}
-          >
-            <Sparkles size={13} style={{ color: '#FF4F2E' }} />
-            <span>ENGINE V4 ACTIVE · GEOMETRIC VECTOR PORTRAIT</span>
+          <div className="studio-hero__badge mono">
+            <span className="studio-hero__badge-dot" />
+            <span>SYSTEM // VECTOR RECONSTRUCTION & CREATIVE CODING STUDIO</span>
           </div>
+
           <h1 className="studio-hero__title">
-            Transform Your Portrait into <span className="text-gradient">Original Geometric Vector Code</span>
+            Reconstruct photographs into{' '}
+            <em className="studio-hero__title-accent">pure vector code</em>.
           </h1>
+
           <p className="studio-hero__subtitle">
-            Upload your selfie to calibrate face geometry. CodeMyFace synthesizes stylized,
-            mathematical polygon vectors rendered alongside live SVG code — completely inside your browser with zero cloud storage.
+            CodeMyPicture transforms portrait and scene photographs into genuine, editable SVG code directly inside your
+            browser. Choose expressive digital painting brushwork or crisp photographic reconstruction — executed entirely in local device memory without server uploads.
           </p>
+
+          <div className="studio-hero__disclaimer mono">
+            <span>[ NOTE: Synthesizes scalable mathematical vector geometry; does not claim pixel-perfect raster replication or identical reproduction ]</span>
+          </div>
         </div>
       )}
 
@@ -137,16 +141,12 @@ export const UploadWorkflow: React.FC<UploadWorkflowProps> = ({
         </div>
       )}
 
-      {/* Upload Dropzone (Empty State) or Photo Preview (Loaded State) */}
+      {/* 2. Prominent Photo-Upload Call to Action */}
       {!currentImage ? (
-        <>
-          <Dropzone
-            onFileSelected={processFile}
-            isValidating={isValidating}
-          />
-
-          {/* Quick Test Sample Fixtures Picker */}
-        </>
+        <Dropzone
+          onFileSelected={processFile}
+          isValidating={isValidating}
+        />
       ) : (
         <PhotoPreview
           image={currentImage}
@@ -157,40 +157,30 @@ export const UploadWorkflow: React.FC<UploadWorkflowProps> = ({
         />
       )}
 
-      {/* Feature highlight cards for studio setup */}
+      {/* 3. Detailed Technical Information Sections (Shown on Landing Page when no photo is active) */}
       {!currentImage && (
-        <div className="studio-features-grid">
-          <div className="feature-card">
-            <div className="feature-card__icon-box">
-              <Sparkles size={18} className="text-accent" />
-            </div>
-            <h4 className="feature-card__title">Stylized Vector Art</h4>
-            <p className="feature-card__description">
-              Pure geometric polygon artwork, not photo filters or raster overlays. Every facet is an SVG path.
-            </p>
-          </div>
+        <>
+          {/* Section 1: Painting vs Recreation Comparison & Quality Tiers */}
+          <ModeComparisonSection />
 
-          <div className="feature-card">
-            <div className="feature-card__icon-box">
-              <Code2 size={18} className="text-cyan" />
-            </div>
-            <h4 className="feature-card__title">Split-Screen Code Stream</h4>
-            <p className="feature-card__description">
-              Watch clean, formatted SVG vector markup generate line-by-line beside your portrait canvas.
-            </p>
-          </div>
+          {/* Section 2: Five-Stage Reconstruction Workflow */}
+          <WorkflowSection />
 
-          <div className="feature-card">
-            <div className="feature-card__icon-box">
-              <ShieldAlert size={18} className="text-success" />
-            </div>
-            <h4 className="feature-card__title">Private & In-Memory</h4>
-            <p className="feature-card__description">
-              MediaPipe WASM models run locally on your device. Your photo never leaves your machine.
-            </p>
-          </div>
-        </div>
+          {/* Section 3: Engine Architecture & Vector Geometry */}
+          <TechnicalFeaturesSection />
+
+          {/* Section 4: Verified Client-Side Privacy */}
+          <LocalPrivacySection />
+
+          {/* Section 5: Available Export Formats */}
+          <ExportFormatsSection />
+
+          {/* Section 6: Studio Diagnostics & Technical Telemetry */}
+          <DiagnosticsInfoSection />
+        </>
       )}
     </div>
   );
 };
+
+export default UploadWorkflow;

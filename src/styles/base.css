@@ -1,5 +1,5 @@
 /* ==========================================================================
-   CodeMyFace Base Styles
+   CodeMyPicture Base Styles — Unified Atelier Studio Foundation
    ========================================================================== */
 
 *, *::before, *::after {
@@ -13,106 +13,115 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  background-color: var(--bg-app);
-  color: var(--text-primary);
+  background-color: var(--ink);
+  color: var(--paper);
   font-family: var(--font-sans);
   height: 100%;
+  color-scheme: dark;
 }
 
 body {
   min-height: 100%;
   display: flex;
   flex-direction: column;
-  background-color: var(--bg-app);
-  background-image: 
-    radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.08) 0%, transparent 60%),
-    radial-gradient(circle at 90% 90%, rgba(6, 182, 212, 0.04) 0%, transparent 50%),
-    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-  background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
-  background-position: 0 0, 0 0, -1px -1px, -1px -1px;
+  background-color: var(--ink);
+  color: var(--paper);
+  font-size: var(--text-base);
+  line-height: 1.5;
   overflow-x: hidden;
+  user-select: none;
 }
 
 #root {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background-color: var(--ink);
 }
 
 /* Typography Defaults */
 h1, h2, h3, h4, h5, h6 {
-  font-weight: 700;
+  font-weight: 500;
   line-height: 1.25;
-  color: var(--text-primary);
-  letter-spacing: -0.02em;
+  color: var(--paper);
+  letter-spacing: -0.01em;
 }
 
 p {
   line-height: 1.6;
-  color: var(--text-secondary);
+  color: var(--paper-dim);
 }
 
 a {
-  color: var(--accent-secondary);
+  color: var(--paper);
   text-decoration: none;
   transition: color var(--transition-fast);
 }
 
 a:hover {
-  color: var(--accent-primary);
+  color: var(--accent);
 }
 
 button {
   font-family: inherit;
+  font-size: inherit;
   border: none;
   background: none;
   cursor: pointer;
   outline: none;
+  color: inherit;
 }
 
-button:focus-visible,
-input:focus-visible {
-  outline: 2px solid var(--accent-primary);
-  outline-offset: 2px;
+/* Strict Keyboard Accessibility */
+:focus-visible {
+  outline: 1px solid var(--accent) !important;
+  outline-offset: 1px !important;
 }
 
-code, pre, kbd, samp {
+::selection {
+  background-color: rgba(var(--accent-rgb, 255, 79, 46), 0.28) !important;
+  color: var(--paper) !important;
+}
+
+input, textarea, select {
+  font-family: inherit;
+  caret-color: var(--accent);
+}
+
+code, pre, kbd, samp, .mono {
   font-family: var(--font-mono);
 }
 
-/* Scrollbar Customization */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+/* 3px Thin Atelier Scrollbars */
+*::-webkit-scrollbar {
+  width: 3px;
+  height: 3px;
 }
 
-::-webkit-scrollbar-track {
-  background: var(--bg-surface-1);
+*::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-::-webkit-scrollbar-thumb {
-  background: var(--border-default);
-  border-radius: var(--radius-full);
+*::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 2px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: var(--border-strong);
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--paper-dim);
 }
 
-/* Common utility classes */
-.mono {
-  font-family: var(--font-mono);
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
 }
 
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border-width: 0;
+/* Accessibility: Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
