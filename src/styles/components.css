@@ -827,7 +827,7 @@
 }
 
 .landing-mode-icon--recreation {
-  color: #60a5fa;
+  color: var(--paper-dim);
 }
 
 .landing-mode-card__tag {
@@ -853,7 +853,7 @@
 }
 
 .landing-mode-card--recreation .landing-mode-card__tagline {
-  color: #60a5fa;
+  color: var(--paper-dim);
 }
 
 .landing-mode-card__desc {
@@ -892,8 +892,8 @@
 }
 
 .landing-mode-card--recreation .landing-tier-badge {
-  background: rgba(59, 130, 246, 0.15);
-  color: #93c5fa;
+  background: var(--ink-3);
+  color: var(--paper-dim);
 }
 
 .landing-tier-summary {
