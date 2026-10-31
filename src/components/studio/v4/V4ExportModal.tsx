@@ -51,8 +51,8 @@ export function generateResponsiveHtmlEmbed(svg: string, width: number, height: 
     `<svg width="100%" height="auto" style="display:block;max-width:100%;height:auto;"`
   );
 
-  return `<!-- CodeMyFace Responsive Vector Portrait Embed -->
-<div class="codemyface-portrait" style="width:100%;max-width:${width}px;margin:0 auto;">
+  return `<!-- CodeMyPicture Responsive Vector Embed -->
+<div class="codemypicture-vector" style="width:100%;max-width:${width}px;margin:0 auto;">
   ${cleanSvg}
 </div>`;
 }
@@ -147,9 +147,9 @@ export const V4ExportModal: React.FC<V4ExportModalProps> = ({
   const presetMetrics = useMemo(() => {
     if (!svgContent) {
       return {
-        balanced: { rawBytes: 0, gzipBytes: 0, ssim: 0.945 },
-        max: { rawBytes: 0, gzipBytes: 0, ssim: 1.0 },
-        compact: { rawBytes: 0, gzipBytes: 0, ssim: 0.944 },
+        balanced: { rawBytes: 0, gzipBytes: 0 },
+        max: { rawBytes: 0, gzipBytes: 0 },
+        compact: { rawBytes: 0, gzipBytes: 0 },
       };
     }
 
@@ -165,17 +165,14 @@ export const V4ExportModal: React.FC<V4ExportModalProps> = ({
       balanced: {
         rawBytes: balBytes,
         gzipBytes: Math.round(balBytes * 0.31),
-        ssim: 0.945,
       },
       max: {
         rawBytes: maxBytes,
         gzipBytes: Math.round(maxBytes * 0.32),
-        ssim: 1.0,
       },
       compact: {
         rawBytes: compBytes,
         gzipBytes: Math.round(compBytes * 0.30),
-        ssim: 0.944,
       },
     };
   }, [svgContent, includeCommentsAndIds]);
@@ -318,7 +315,7 @@ export const V4ExportModal: React.FC<V4ExportModalProps> = ({
                 <button
                   className={`v4-size-option-card ${sizePreset === 'balanced' ? 'is-active' : ''}`}
                   onClick={() => setSizePreset('balanced')}
-                  title="Balanced: all passing steps (relative coords, 2x whole-number viewBox, collinear & 0.25px near-straight pruning)"
+                  title="Balanced: relative coordinate formatting and collinear path pruning"
                 >
                   <div className="v4-size-option-title">
                     <span>Balanced</span>
@@ -326,40 +323,38 @@ export const V4ExportModal: React.FC<V4ExportModalProps> = ({
                   </div>
                   <div className="v4-size-option-metrics">
                     <span>{formatKb(presetMetrics.balanced.rawBytes)} ({formatKb(presetMetrics.balanced.gzipBytes)} gz)</span>
-                    <span className="v4-size-ssim">SSIM ~{presetMetrics.balanced.ssim.toFixed(3)}</span>
                   </div>
-                  <div className="v4-size-option-desc">Every step that passed: 100% likeness, ~75% smaller</div>
+                  <div className="v4-size-option-desc">Relative coordinates and curve pruning for standard web delivery</div>
                 </button>
 
                 <button
                   className={`v4-size-option-card ${sizePreset === 'max' ? 'is-active' : ''}`}
                   onClick={() => setSizePreset('max')}
-                  title="Max: lossless steps only (relative commands, short hex, 2x whole-number viewBox, collinear pruning)"
+                  title="Max: full coordinate precision with lossless structure preservation"
                 >
                   <div className="v4-size-option-title">
-                    <span>Max</span>
-                    <span className="v4-size-badge-lossless">100% lossless</span>
+                    <span>Full Fidelity</span>
+                    <span className="v4-size-badge-lossless">maximum detail</span>
                   </div>
                   <div className="v4-size-option-metrics">
                     <span>{formatKb(presetMetrics.max.rawBytes)} ({formatKb(presetMetrics.max.gzipBytes)} gz)</span>
-                    <span className="v4-size-ssim">SSIM 1.000</span>
                   </div>
-                  <div className="v4-size-option-desc">Lossless steps only: bit-for-bit identical, ~68% smaller</div>
+                  <div className="v4-size-option-desc">Lossless path preservation, coordinate rounding, and clean attributes</div>
                 </button>
 
                 <button
                   className={`v4-size-option-card ${sizePreset === 'compact' ? 'is-active' : ''}`}
                   onClick={() => setSizePreset('compact')}
-                  title="Compact: maximum safe compression (includes 0.4px near-straight pruning)"
+                  title="Compact: aggressive coordinate reduction for minimal file size"
                 >
                   <div className="v4-size-option-title">
                     <span>Compact</span>
+                    <span className="v4-chip-badge" style={{ backgroundColor: 'rgba(157, 180, 138, 0.2)', color: 'var(--moss)' }}>lightweight</span>
                   </div>
                   <div className="v4-size-option-metrics">
                     <span>{formatKb(presetMetrics.compact.rawBytes)} ({formatKb(presetMetrics.compact.gzipBytes)} gz)</span>
-                    <span className="v4-size-ssim">SSIM ~{presetMetrics.compact.ssim.toFixed(3)}</span>
                   </div>
-                  <div className="v4-size-option-desc">Highest safe compression, ~80% smaller</div>
+                  <div className="v4-size-option-desc">Aggressive path coordinate pruning for minimal payload weight</div>
                 </button>
               </div>
             </div>

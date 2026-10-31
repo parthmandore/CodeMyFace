@@ -10,8 +10,10 @@ import { tags } from '@lezer/highlight';
 import { WidgetType, MatchDecorator, ViewPlugin, Decoration } from '@codemirror/view';
 import { WorkbenchStatus } from '../../../engine/v4/types';
 import { cleanSvgDocument } from '../../../engine/v4/sizeOptimizer/svgCleaner';
+import { TechnicalDiagnosticsPanel } from './TechnicalDiagnosticsPanel';
+import { computeSvgDiagnostics, calculateGenuineGzipSize, SvgSizeStats } from '../../../utils/svgDiagnostics';
 
-export type EditorTabFormat = 'svg' | 'html' | 'jsx';
+export type EditorTabFormat = 'svg' | 'html' | 'jsx' | 'diagnostics';
 
 export interface V4CodeEditorProps {
   originalSvg: string;
@@ -25,6 +27,23 @@ export interface V4CodeEditorProps {
   isStreaming?: boolean;
   targetScrollLayerId?: string | null;
   onToast?: (message: string, type?: 'info' | 'success' | 'warn' | 'error') => void;
+  mode?: 'recreation' | 'painting';
+  quality?: 'high' | 'low' | 'medium';
+  durationMs?: number;
+  colorMetrics?: {
+    skin?: { hex: string; r: number; g: number; b: number };
+    hair?: { hex: string; r: number; g: number; b: number };
+    lips?: { hex: string; r: number; g: number; b: number };
+    bg?: { hex: string; r: number; g: number; b: number };
+  };
+  activeTab?: EditorTabFormat;
+  onTabChange?: (tab: EditorTabFormat) => void;
+  logs?: any[];
+  onClearLogs?: () => void;
+  progressPercent?: number;
+  generationStage?: string;
+  onCancel?: () => void;
+  sizeStats?: SvgSizeStats | null;
 }
 
 // 1. Atelier Syntax Highlighting:
@@ -277,16 +296,77 @@ export const V4CodeEditor: React.FC<V4CodeEditorProps> = ({
   isStreaming = false,
   targetScrollLayerId = null,
   onToast,
+  mode = 'painting',
+  quality = 'high',
+  durationMs,
+  colorMetrics,
+  activeTab: controlledActiveTab,
+  onTabChange,
+  logs = [],
+  onClearLogs,
+  progressPercent = 0,
+  generationStage = '',
+  onCancel,
+  sizeStats,
 }) => {
-  const [activeTab, setActiveTab] = useState<EditorTabFormat>('svg');
+  const [internalTab, setInternalTab] = useState<EditorTabFormat>('svg');
+  const activeTab = controlledActiveTab !== undefined ? controlledActiveTab : internalTab;
+
+  const handleTabSelect = useCallback(
+    (tab: EditorTabFormat) => {
+      setInternalTab(tab);
+      onTabChange?.(tab);
+    },
+    [onTabChange]
+  );
+
+  // When synthesis finishes, automatically shift active tab to embed.html
+  const prevStatusRef = useRef<WorkbenchStatus | undefined>(status);
+  useEffect(() => {
+    if (
+      (prevStatusRef.current === 'analyzing' || prevStatusRef.current === 'painting') &&
+      status === 'done'
+    ) {
+      handleTabSelect('html');
+    }
+    prevStatusRef.current = status;
+  }, [status, handleTabSelect]);
+
   const [isEditable, setIsEditable] = useState<boolean>(false);
   const [isMinified, setIsMinified] = useState<boolean>(false);
-  const [isWordWrap, setIsWordWrap] = useState<boolean>(false);
+  const [isWordWrap, setIsWordWrap] = useState<boolean>(true);
   const [fontSize, setFontSize] = useState<number>(13);
   const [copied, setCopied] = useState<boolean>(false);
   const [copyError, setCopyError] = useState<string | null>(null);
   const [downloadDropdownOpen, setDownloadDropdownOpen] = useState<boolean>(false);
   const [viewMenuOpen, setViewMenuOpen] = useState<boolean>(false);
+  const downloadDropdownRef = useRef<HTMLDivElement | null>(null);
+  const viewMenuRef = useRef<HTMLDivElement | null>(null);
+
+  // Esc closes menus and click outside
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setDownloadDropdownOpen(false);
+        setViewMenuOpen(false);
+      }
+    };
+    const handleClickOutside = (e: MouseEvent) => {
+      if (downloadDropdownRef.current && !downloadDropdownRef.current.contains(e.target as Node)) {
+        setDownloadDropdownOpen(false);
+      }
+      if (viewMenuRef.current && !viewMenuRef.current.contains(e.target as Node)) {
+        setViewMenuOpen(false);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   const [includeCommentsAndIds, setIncludeCommentsAndIds] = useState<boolean>(false);
   const [xmlError, setXmlError] = useState<{ line?: number; message?: string } | null>(null);
 
@@ -294,7 +374,33 @@ export const V4CodeEditor: React.FC<V4CodeEditorProps> = ({
   const [lineCount, setLineCount] = useState<number>(0);
   const [fileSizeBytes, setFileSizeBytes] = useState<number>(0);
   const [gzipSizeBytes, setGzipSizeBytes] = useState<number>(0);
-  const [pathCount, setPathCount] = useState<number>(0);
+  const [, setPathCount] = useState<number>(0);
+
+  const diagnostics = useMemo(() => {
+    return computeSvgDiagnostics({
+      svgString: currentSvg,
+      width,
+      height,
+      durationMs,
+      mode,
+      quality,
+      status,
+      colorMetrics,
+    });
+  }, [currentSvg, width, height, durationMs, mode, quality, status, colorMetrics]);
+
+  useEffect(() => {
+    if (!currentSvg) return;
+    let isCancelled = false;
+    calculateGenuineGzipSize(currentSvg).then((gz) => {
+      if (!isCancelled && gz > 0) {
+        setGzipSizeBytes(gz);
+      }
+    });
+    return () => {
+      isCancelled = true;
+    };
+  }, [currentSvg]);
 
   // Large file handling
   const [loadFullFile, setLoadFullFile] = useState<boolean>(false);
@@ -622,23 +728,31 @@ export const V4CodeEditor: React.FC<V4CodeEditorProps> = ({
       <div className="v4-editor-tabs-bar">
         <button
           className={`v4-editor-tab ${activeTab === 'svg' ? 'is-active' : ''}`}
-          onClick={() => setActiveTab('svg')}
+          onClick={() => handleTabSelect('svg')}
         >
           <span>portrait.svg</span>
         </button>
 
         <button
           className={`v4-editor-tab ${activeTab === 'html' ? 'is-active' : ''}`}
-          onClick={() => setActiveTab('html')}
+          onClick={() => handleTabSelect('html')}
         >
           <span>embed.html</span>
         </button>
 
         <button
           className={`v4-editor-tab ${activeTab === 'jsx' ? 'is-active' : ''}`}
-          onClick={() => setActiveTab('jsx')}
+          onClick={() => handleTabSelect('jsx')}
         >
           <span>Portrait.jsx</span>
+        </button>
+
+        <button
+          className={`v4-editor-tab ${activeTab === 'diagnostics' ? 'is-active' : ''}`}
+          onClick={() => handleTabSelect('diagnostics')}
+          title="Technical reconstruction diagnostics & metrics"
+        >
+          <span>Diagnostics</span>
         </button>
       </div>
 
@@ -650,7 +764,7 @@ export const V4CodeEditor: React.FC<V4CodeEditorProps> = ({
           </button>
 
           {/* Download Dropdown */}
-          <div style={{ position: 'relative' }}>
+          <div style={{ position: 'relative' }} ref={downloadDropdownRef}>
             <button
               className="v4-btn"
               onClick={() => {
@@ -725,9 +839,21 @@ export const V4CodeEditor: React.FC<V4CodeEditorProps> = ({
           )}
         </div>
 
-        {/* Right Group: A single 'View' menu */}
+        {/* Right Group: [Wrap] button and [View v] menu */}
         <div className="v4-editor-toolbar__group">
-          <div style={{ position: 'relative' }}>
+          <button
+            className={`v4-btn ${isWordWrap ? 'is-active' : ''}`}
+            onClick={() => setIsWordWrap(!isWordWrap)}
+            title="Toggle word wrap"
+            style={{
+              backgroundColor: isWordWrap ? 'var(--paper)' : 'transparent',
+              color: isWordWrap ? 'var(--ink)' : 'var(--paper)',
+            }}
+          >
+            <span>Wrap</span>
+          </button>
+
+          <div style={{ position: 'relative' }} ref={viewMenuRef}>
             <button
               className="v4-btn"
               onClick={() => {
@@ -891,26 +1017,50 @@ export const V4CodeEditor: React.FC<V4CodeEditorProps> = ({
         </div>
       )}
 
-      {/* 5. CodeMirror 6 Host */}
-      <div className="v4-cm-host" ref={editorContainerRef} />
+      {/* 5. CodeMirror 6 Host or Technical Diagnostics */}
+      {activeTab === 'diagnostics' ? (
+        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+          <TechnicalDiagnosticsPanel
+            diagnostics={diagnostics}
+            logs={logs}
+            onClearLogs={onClearLogs}
+            isGenerating={isStreaming || status === 'analyzing' || status === 'painting'}
+            progressPercent={progressPercent}
+            generationStage={generationStage}
+            onCancel={onCancel}
+            mode={mode}
+            onCopyTelemetry={() => {
+              onToast?.('Telemetry JSON copied to clipboard', 'success');
+            }}
+          />
+        </div>
+      ) : (
+        <div className="v4-cm-host" ref={editorContainerRef} />
+      )}
 
-      {/* 6. Status Bar (Sentence case labels) */}
-      <div className="v4-editor-status-bar">
-        <div style={{ display: 'flex', gap: '16px' }}>
+      {/* 6. Status Bar (Single mono row at bottom, same numbers as the caption) */}
+      <div className="v4-editor-status-bar mono">
+        <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
           <span className="v4-editor-status-bar__item">
             {lineCount > 0 ? `${lineCount.toLocaleString()} lines` : '- lines'}
           </span>
           <span className="v4-editor-status-bar__item">
-            {pathCount > 0 ? `${pathCount.toLocaleString()} paths` : '- paths'}
+            {sizeStats ? `${sizeStats.pathCount.toLocaleString()} paths` : diagnostics.pathCount > 0 ? `${diagnostics.pathCount.toLocaleString()} paths` : '- paths'}
+          </span>
+          <span className="v4-editor-status-bar__item">
+            {sizeStats ? `${sizeStats.shapeCount.toLocaleString()} shapes` : diagnostics.shapeCount > 0 ? `${diagnostics.shapeCount.toLocaleString()} shapes` : '- shapes'}
+          </span>
+          <span className="v4-editor-status-bar__item">
+            {sizeStats ? `${sizeStats.fillCount} fills` : diagnostics.distinctFillColors > 0 ? `${diagnostics.distinctFillColors} fills` : '- fills'}
           </span>
         </div>
 
         <div style={{ display: 'flex', gap: '16px' }}>
           <span className="v4-editor-status-bar__item">
-            {formatFileSize(fileSizeBytes)}
+            {sizeStats ? sizeStats.formattedRaw : formatFileSize(fileSizeBytes)}
           </span>
           <span className="v4-editor-status-bar__item">
-            {fileSizeBytes > 0 ? `gzip ${formatFileSize(gzipSizeBytes)}` : 'gzip -'}
+            {sizeStats ? `gzip ${sizeStats.formattedGzip}` : fileSizeBytes > 0 ? `gzip ${formatFileSize(gzipSizeBytes)}` : 'gzip -'}
           </span>
         </div>
       </div>

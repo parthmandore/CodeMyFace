@@ -107,8 +107,7 @@ export const V4Terminal: React.FC<V4TerminalProps> = ({
     if (isGenerating) {
       summaryText = `Working... ${elapsedSeconds.toFixed(1)} s`;
     } else if (summaryData) {
-      const ssimFormatted = summaryData.ssim !== undefined ? summaryData.ssim.toFixed(2) : '-';
-      summaryText = `Done · ${formatBytes(summaryData.sizeBytes)} · ${formatBytes(summaryData.gzipBytes)} gzip · SSIM ${ssimFormatted} · [L] open log`;
+      summaryText = `Done · ${formatBytes(summaryData.sizeBytes)} · ${formatBytes(summaryData.gzipBytes)} gzip · ${summaryData.paths.toLocaleString()} paths · ${(summaryData.durationMs / 1000).toFixed(2)}s · [L] open log`;
     }
 
     return (
@@ -222,7 +221,7 @@ export const V4Terminal: React.FC<V4TerminalProps> = ({
         {colorMetrics && (colorMetrics.skin || colorMetrics.lips || colorMetrics.hair) && (
           <div className="atelier-palette-card">
             <div style={{ color: 'var(--paper-dim)', fontSize: '12px' }}>
-              Biometric tones sampled:
+              Source colors sampled (biometric anchors):
             </div>
             <div className="atelier-swatches-row">
               {colorMetrics.skin && (
@@ -281,13 +280,13 @@ export const V4Terminal: React.FC<V4TerminalProps> = ({
               </div>
 
               <div className="atelier-summary-item">
-                <span className="atelier-summary-label">Mean color error (ΔE)</span>
-                <span className="atelier-summary-num">{summaryData.colorError}</span>
+                <span className="atelier-summary-label">Reconstruction mode</span>
+                <span className="atelier-summary-num">{mode === 'recreation' ? 'Recreation' : 'Painting'}</span>
               </div>
 
               <div className="atelier-summary-item">
-                <span className="atelier-summary-label">Structural fidelity (SSIM)</span>
-                <span className="atelier-summary-num atelier-summary-num--moss">{summaryData.ssim}</span>
+                <span className="atelier-summary-label">Synthesis status</span>
+                <span className="atelier-summary-num atelier-summary-num--moss">Success</span>
               </div>
 
               {summaryData.speckCount !== undefined && (

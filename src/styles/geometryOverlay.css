@@ -1,0 +1,330 @@
+/* ==========================================================================
+   CodeMyPicture — Geometry Overlays & Technical Diagnostics Stylesheet
+   Atelier Aesthetic: Deep charcoal, hairline borders, monospace precision
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Geometry Overlay Vectors
+   -------------------------------------------------------------------------- */
+.geometry-overlay-container {
+  z-index: 15;
+  user-select: none;
+  pointer-events: none;
+}
+
+.geo-line {
+  stroke-width: 0.75;
+  vector-effect: non-scaling-stroke;
+}
+
+.geo-line--contour-base {
+  fill: none;
+  stroke: rgba(236, 229, 214, 0.45);
+  stroke-width: 0.85;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.geo-line--grid {
+  stroke: rgba(165, 156, 140, 0.22);
+  stroke-dasharray: 4 3;
+}
+
+.geo-line--edge {
+  stroke: rgba(var(--accent-rgb, 255, 79, 46), 0.55);
+}
+
+.geo-line--landmark {
+  stroke: rgba(157, 180, 138, 0.75);
+}
+
+.geo-node {
+  transition: opacity 0.2s ease;
+}
+
+.geo-node--subtle {
+  fill: var(--paper-muted);
+  opacity: 0.6;
+}
+
+.geo-node--key {
+  fill: var(--accent);
+  opacity: 0.95;
+}
+
+.geo-contour-path {
+  fill: none;
+  stroke: rgba(236, 229, 214, 0.65);
+  stroke-width: 1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.geo-contour-path--key {
+  stroke: var(--accent);
+  stroke-width: 1.25;
+}
+
+.geo-landmark-dot {
+  fill: var(--moss);
+  opacity: 0.75;
+}
+
+.geo-landmark-dot--major {
+  fill: var(--accent);
+  opacity: 0.95;
+}
+
+.geo-vector-wireframe {
+  vector-effect: non-scaling-stroke;
+}
+
+/* --------------------------------------------------------------------------
+   Geometry Controls Toolbar
+   -------------------------------------------------------------------------- */
+.geometry-controls-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: rgba(20, 17, 15, 0.92);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 3px 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+.geometry-controls-label {
+  font-size: 10px;
+  color: var(--paper-dim);
+  letter-spacing: 0.05em;
+  padding-right: 4px;
+}
+
+.geometry-controls-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.geo-ctrl-btn {
+  height: 24px;
+  padding: 0 8px;
+  font-size: 11px;
+  gap: 5px;
+  border-radius: 2px;
+  color: var(--paper-dim);
+  background-color: var(--ink);
+  border: 1px solid var(--line-subtle);
+  transition: all var(--transition-fast);
+}
+
+.geo-ctrl-btn:hover:not(:disabled) {
+  color: var(--paper);
+  border-color: var(--paper-dim);
+}
+
+.geo-ctrl-btn.is-active {
+  background-color: var(--paper);
+  color: var(--ink);
+  border-color: var(--paper);
+  font-weight: 600;
+}
+
+.geo-ctrl-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* --------------------------------------------------------------------------
+   Technical Diagnostics Dashboard Panel
+   -------------------------------------------------------------------------- */
+.technical-diagnostics-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  background-color: var(--ink);
+  color: var(--paper);
+  height: 100%;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.diag-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.diag-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: var(--paper-dim);
+}
+
+.diag-title-icon {
+  color: var(--accent);
+}
+
+.diag-title-text {
+  color: var(--paper);
+  font-weight: 600;
+}
+
+.diag-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: var(--radius-sm);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.diag-status-badge--success {
+  background-color: rgba(157, 180, 138, 0.15);
+  border: 1px solid var(--moss);
+  color: var(--moss);
+}
+
+.diag-status-badge--generating {
+  background-color: rgba(255, 79, 46, 0.15);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+}
+
+.diag-status-badge--idle {
+  background-color: rgba(165, 156, 140, 0.15);
+  border: 1px solid var(--line-subtle);
+  color: var(--paper-dim);
+}
+
+.diag-status-badge--error {
+  background-color: rgba(255, 79, 46, 0.2);
+  border: 1px solid var(--vermilion);
+  color: var(--vermilion);
+}
+
+.diag-copy-btn {
+  height: 24px;
+  padding: 0 10px;
+  font-size: 11px;
+}
+
+/* --------------------------------------------------------------------------
+   Diagnostics Metrics Grid
+   -------------------------------------------------------------------------- */
+.diag-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.diag-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  background-color: var(--ink-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  transition: border-color var(--transition-fast);
+}
+
+.diag-card:hover {
+  border-color: var(--paper-dim);
+}
+
+.diag-card__label {
+  font-size: 9px;
+  color: var(--paper-muted);
+  letter-spacing: 0.06em;
+  font-family: var(--font-mono);
+}
+
+.diag-card__value {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--paper);
+}
+
+.diag-card__unit {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--paper-dim);
+}
+
+.diag-card__subtext {
+  font-size: 10px;
+  color: var(--paper-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.diag-card__empty {
+  color: var(--paper-muted);
+}
+
+/* --------------------------------------------------------------------------
+   Diagnostics Palette Strips
+   -------------------------------------------------------------------------- */
+.diag-palette-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  background-color: var(--ink-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+
+.diag-palette-strip__header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  color: var(--paper-dim);
+}
+
+.diag-palette-strip__chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.diag-palette-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px;
+  background-color: var(--ink);
+  border: 1px solid var(--line-subtle);
+  border-radius: 2px;
+  font-size: 10px;
+}
+
+.diag-palette-chip__color {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.diag-palette-chip__hex {
+  color: var(--paper-dim);
+}
